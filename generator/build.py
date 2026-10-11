@@ -140,13 +140,6 @@ NAME_GENRE_HINTS = [
 # provider's own category, or a regex on its name.
 THEMES = [
     # id, row name, genres, provider-category words, name regex
-    # Official FAST channels from History, Discovery, Smithsonian, BBC Earth and similar.
-    # Matched on the channel name or on the series it shows 24/7.
-    ("factual", "History & Discovery", [], [],
-     r"\b(history|discovery|smithsonian|bbc earth|pbs nature|love nature|magellantv|pluto tv science"
-     r"|ancient aliens|modern marvels|pawn stars|american pickers|forged in fire|swamp people"
-     r"|ice road truckers|curse of oak island|the universe|universe mysteries|mythbusters|how its made"
-     r"|gold rush|deadliest catch|naked and afraid|mysteries xplored|xtreme outdoor)\b"),
     ("popular", "Popular Free Channels", [], [], None),   # carried by 2+ services
     ("series", "Series 24/7", [], [], None),              # EPG shows one series all day
     ("news", "News 24/7", ["News"], [], None),
@@ -160,6 +153,13 @@ THEMES = [
      r"\b(anime|gaming|esports|crunchyroll|yu gi oh|pokemon|naruto|gundam)"),
     ("gameshows", "Game Shows", [], ["game show", "daytime"],
      r"\b(game show|price is right|family feud|deal or no deal|jeopardy|wheel of fortune|buzzr|match game|lets make a deal)"),
+    # Official FAST channels from History, Discovery, Smithsonian, BBC Earth and similar.
+    # Matched on the channel name or on the series it shows 24/7.
+    ("factual", "History & Discovery", [], [],
+     r"\b(history|discovery|smithsonian|bbc earth|pbs nature|love nature|magellantv|pluto tv science"
+     r"|ancient aliens|modern marvels|pawn stars|american pickers|forged in fire|swamp people"
+     r"|ice road truckers|curse of oak island|the universe|universe mysteries|mythbusters|how its made"
+     r"|gold rush|deadliest catch|naked and afraid|mysteries xplored|xtreme outdoor)\b"),
     ("nature", "Nature, History & Science", ["Documentaries"], [], None),
     ("food", "Food & Home", [], ["food", "cooking", "home"],
      r"\b(cook|kitchen|food|chef|bbq|bake|baking|recipe|tasty|home improvement)"),

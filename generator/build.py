@@ -49,6 +49,11 @@ MJH_PLAYLISTS = [
     f"{MJH_SITE}/Roku/all.m3u8",
 ]
 
+# Tubi's free live channels, published daily by a community scraper. Stream URLs
+# point at Tubi's own CDN (live-manifest.production-public.tubi.io).
+TUBI = "https://raw.githubusercontent.com/BuddyChewChew/tubi-scraper/main/tubi_playlist.m3u"
+TUBI_HOST = "live-manifest.production-public.tubi.io"
+
 IPTV_ORG_US = "https://raw.githubusercontent.com/iptv-org/iptv/master/streams/us.m3u"
 IPTV_ORG_CHANNELS = "https://iptv-org.github.io/api/channels.json"
 FREE_TV = "https://raw.githubusercontent.com/Free-TV/IPTV/master/playlist.m3u8"
@@ -57,10 +62,11 @@ FREE_TV = "https://raw.githubusercontent.com/Free-TV/IPTV/master/playlist.m3u8"
 PROVIDERS = {
     "pluto": ("Pluto TV", 1),
     "samsung": ("Samsung TV Plus", 2),
-    "roku": ("The Roku Channel", 3),
-    "plex": ("Plex", 4),
-    "freetv": ("Free-TV", 5),
-    "iptvorg": ("iptv-org", 6),
+    "tubi": ("Tubi", 3),
+    "roku": ("The Roku Channel", 4),
+    "plex": ("Plex", 5),
+    "freetv": ("Free-TV", 6),
+    "iptvorg": ("iptv-org", 7),
 }
 
 # Pay-TV networks. Community playlists sometimes carry unlicensed restreams of
@@ -118,7 +124,7 @@ GENRE_RULES = [
     ("Reality", ["reality", "game show", "competition", "daytime", "auction"]),
     ("Classics", ["classic", "western"]),
     ("Music", ["music", "ambiance"]),
-    ("Lifestyle", ["home", "food", "cooking", "travel", "lifestyle", "fashion", "auto",
+    ("Lifestyle", ["home", "food", "eats", "cooking", "travel", "lifestyle", "fashion", "auto",
                    "health", "how-to", "house", "garden", "art", "pop culture"]),
     ("Faith", ["faith", "religious"]),
     ("Shopping", ["shopping"]),
@@ -151,7 +157,7 @@ THEMES = [
     ("kids", "Kids & Family", ["Kids"], [], None),
     ("anime", "Anime & Gaming", [], ["anime", "gaming"],
      r"\b(anime|gaming|esports|crunchyroll|yu gi oh|pokemon|naruto|gundam)"),
-    ("gameshows", "Game Shows", [], ["game show", "daytime"],
+    ("gameshows", "Game Shows", [], ["game show", "daytime", "games & competition"],
      r"\b(game show|price is right|family feud|deal or no deal|jeopardy|wheel of fortune|buzzr|match game|lets make a deal)"),
     # Documentaries plus the official FAST channels of History, Discovery, Smithsonian,
     # BBC Earth and similar, matched on the channel name or the series it shows 24/7.
@@ -160,7 +166,7 @@ THEMES = [
      r"|ancient aliens|modern marvels|pawn stars|american pickers|forged in fire|swamp people"
      r"|ice road truckers|curse of oak island|the universe|universe mysteries|mythbusters|how its made"
      r"|gold rush|deadliest catch|naked and afraid|mysteries xplored|xtreme outdoor)\b"),
-    ("food", "Food & Home", [], ["food", "cooking", "home"],
+    ("food", "Food & Home", [], ["food", "cooking", "home", "good eats"],
      r"\b(cook|kitchen|food|chef|bbq|bake|baking|recipe|tasty|home improvement)"),
     ("classics", "Westerns & Classic TV", ["Classics"], [], None),
     ("music", "Music", ["Music"], [], None),
@@ -427,6 +433,19 @@ def src_samsung(index: dict[str, str]) -> list[Entry]:
     return out
 
 
+def src_tubi(index: dict[str, str]) -> list[Entry]:
+    data = fetch(TUBI)
+    if not data:
+        return []
+    out = []
+    for it in parse_m3u(data.decode("utf-8", "replace")):
+        if urllib.parse.urlsplit(it["url"]).hostname != TUBI_HOST:
+            continue  # only Tubi's own streams
+        out.append(Entry("tubi", it["title"], it["url"], it.get("tvg-logo", ""), "", "",
+                         [it.get("group-title", "")]))
+    return out
+
+
 def src_roku(index: dict[str, str]) -> list[Entry]:
     d = fetch_json(f"{MJH_RAW}/Roku/.channels.json.gz")
     if not d:
@@ -545,7 +564,7 @@ def build(base_url: str, check: bool) -> None:
     index = mjh_url_index()
     print("Loading sources")
     entries: list[Entry] = []
-    for fn in (src_pluto, src_samsung, src_roku, src_plex):
+    for fn in (src_pluto, src_samsung, src_tubi, src_roku, src_plex):
         got = fn(index)
         print(f"  {fn.__name__[4:]}: {len(got)}")
         entries += got
@@ -644,7 +663,7 @@ def build(base_url: str, check: bool) -> None:
         "version": "1.0.0",
         "name": "USA Free TV",
         "description": (f"{len(metas)} free, legal US live channels from Pluto TV, Samsung TV Plus, "
-                        "The Roku Channel, Plex and curated public streams. One entry per channel, "
+                        "Tubi, The Roku Channel, Plex and curated public streams. One entry per channel, "
                         "with every available source as a backup stream."),
         "logo": f"{base_url}/public/logo.png",
         "resources": ["catalog", "meta", "stream"],

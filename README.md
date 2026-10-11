@@ -34,6 +34,7 @@ Edit `THEMES` in `generator/build.py` to add or change rows.
 |---|---|
 | Pluto TV | Official FAST channels, via [i.mjh.nz](https://i.mjh.nz) channel data |
 | Samsung TV Plus | Official FAST channels, via i.mjh.nz |
+| Tubi | Official Tubi live channels, via the daily [tubi-scraper](https://github.com/BuddyChewChew/tubi-scraper) playlist (Tubi CDN URLs only) |
 | The Roku Channel | Official FAST channels, via i.mjh.nz playlists |
 | Plex | Official FAST channels, via i.mjh.nz playlists |
 | [iptv-org](https://github.com/iptv-org/iptv) | Publicly available US streams (local stations, public access, indie networks) |

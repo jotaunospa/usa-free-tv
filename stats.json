@@ -1,0 +1,32 @@
+{
+  "channels": 1373,
+  "streams": 1616,
+  "multi_source_channels": 171,
+  "channels_by_provider": {
+    "pluto": 424,
+    "samsung": 587,
+    "roku": 0,
+    "plex": 0,
+    "freetv": 20,
+    "iptvorg": 531
+  },
+  "channels_by_genre": {
+    "News": 46,
+    "Local": 73,
+    "Sports": 83,
+    "Movies": 93,
+    "Entertainment": 395,
+    "Comedy": 52,
+    "Drama": 69,
+    "Reality": 119,
+    "Classics": 45,
+    "Sci-Fi": 56,
+    "Kids": 60,
+    "Documentaries": 40,
+    "Lifestyle": 81,
+    "Music": 83,
+    "Latino": 78,
+    "Faith": 21,
+    "Shopping": 6
+  }
+}

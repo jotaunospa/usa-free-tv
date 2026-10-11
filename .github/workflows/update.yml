@@ -1,0 +1,42 @@
+name: Update channels
+
+on:
+  schedule:
+    - cron: "17 9 * * *" # daily, 09:17 UTC
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["generator/**", ".github/workflows/update.yml"]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-channels
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Build addon
+        run: python generator/build.py --check
+
+      - name: Commit changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898333+github-actions[bot]@users.noreply.github.com"
+          git add -A manifest.json stats.json catalog meta stream
+          if git diff --cached --quiet; then
+            echo "No channel changes."
+          else
+            git commit -m "chore: update channels ($(python -c 'import json;print(json.load(open("stats.json"))["channels"])') channels)"
+            git push
+          fi

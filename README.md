@@ -17,7 +17,8 @@ into Stremio → Addons → search box.
 
 ## Themed rows
 
-The addon adds rows to the Stremio home screen: Popular Free Channels, Series 24/7,
+The addon adds rows to the Stremio home screen: History & Discovery (official FAST
+channels from History, Discovery, Smithsonian, BBC Earth...), Popular Free Channels, Series 24/7,
 News 24/7, Sports, Movies, True Crime, Comedy, Kids & Family, Anime & Gaming,
 Game Shows, Nature/History/Science, Food & Home, Westerns & Classic TV, Music,
 En Español and Local News. "All Channels" in Discover has a genre filter.

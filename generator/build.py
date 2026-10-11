@@ -140,6 +140,13 @@ NAME_GENRE_HINTS = [
 # provider's own category, or a regex on its name.
 THEMES = [
     # id, row name, genres, provider-category words, name regex
+    # Official FAST channels from History, Discovery, Smithsonian, BBC Earth and similar.
+    # Matched on the channel name or on the series it shows 24/7.
+    ("factual", "History & Discovery", [], [],
+     r"\b(history|discovery|smithsonian|bbc earth|pbs nature|love nature|magellantv|pluto tv science"
+     r"|ancient aliens|modern marvels|pawn stars|american pickers|forged in fire|swamp people"
+     r"|ice road truckers|curse of oak island|the universe|universe mysteries|mythbusters|how its made"
+     r"|gold rush|deadliest catch|naked and afraid|mysteries xplored|xtreme outdoor)\b"),
     ("popular", "Popular Free Channels", [], [], None),   # carried by 2+ services
     ("series", "Series 24/7", [], [], None),              # EPG shows one series all day
     ("news", "News 24/7", ["News"], [], None),
@@ -311,7 +318,8 @@ def themes_for(groups: list[str], name: str, genres: list[str], providers: int,
         else:
             hit = (any(g in genres for g in tgenres)
                    or any(w in gl for w in words)
-                   or bool(rx and re.search(rx, n)))
+                   or bool(rx and re.search(rx, n))
+                   or bool(rx and series and re.search(rx, norm(series))))
         if hit:
             out.append(tid)
     return out

@@ -30,8 +30,9 @@
     "Shopping": 6
   },
   "channels_by_theme": {
+    "History & Discovery": 27,
     "Popular Free Channels": 171,
-    "Series 24/7": 241,
+    "Series 24/7": 237,
     "News 24/7": 46,
     "Sports": 83,
     "Movies": 93,
@@ -41,7 +42,7 @@
     "Anime & Gaming": 24,
     "Game Shows": 29,
     "Nature, History & Science": 40,
-    "Food & Home": 61,
+    "Food & Home": 62,
     "Westerns & Classic TV": 45,
     "Music": 83,
     "En Espa\u00f1ol": 78,

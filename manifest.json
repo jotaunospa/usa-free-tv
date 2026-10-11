@@ -18,8 +18,184 @@
   "catalogs": [
     {
       "type": "tv",
+      "id": "popular",
+      "name": "Popular Free Channels",
+      "extra": [
+        {
+          "name": "skip",
+          "isRequired": false
+        }
+      ]
+    },
+    {
+      "type": "tv",
+      "id": "series",
+      "name": "Series 24/7",
+      "extra": [
+        {
+          "name": "skip",
+          "isRequired": false
+        }
+      ]
+    },
+    {
+      "type": "tv",
+      "id": "news",
+      "name": "News 24/7",
+      "extra": [
+        {
+          "name": "skip",
+          "isRequired": false
+        }
+      ]
+    },
+    {
+      "type": "tv",
+      "id": "sports",
+      "name": "Sports",
+      "extra": [
+        {
+          "name": "skip",
+          "isRequired": false
+        }
+      ]
+    },
+    {
+      "type": "tv",
+      "id": "movies",
+      "name": "Movies",
+      "extra": [
+        {
+          "name": "skip",
+          "isRequired": false
+        }
+      ]
+    },
+    {
+      "type": "tv",
+      "id": "truecrime",
+      "name": "True Crime",
+      "extra": [
+        {
+          "name": "skip",
+          "isRequired": false
+        }
+      ]
+    },
+    {
+      "type": "tv",
+      "id": "comedy",
+      "name": "Comedy",
+      "extra": [
+        {
+          "name": "skip",
+          "isRequired": false
+        }
+      ]
+    },
+    {
+      "type": "tv",
+      "id": "kids",
+      "name": "Kids & Family",
+      "extra": [
+        {
+          "name": "skip",
+          "isRequired": false
+        }
+      ]
+    },
+    {
+      "type": "tv",
+      "id": "anime",
+      "name": "Anime & Gaming",
+      "extra": [
+        {
+          "name": "skip",
+          "isRequired": false
+        }
+      ]
+    },
+    {
+      "type": "tv",
+      "id": "gameshows",
+      "name": "Game Shows",
+      "extra": [
+        {
+          "name": "skip",
+          "isRequired": false
+        }
+      ]
+    },
+    {
+      "type": "tv",
+      "id": "nature",
+      "name": "Nature, History & Science",
+      "extra": [
+        {
+          "name": "skip",
+          "isRequired": false
+        }
+      ]
+    },
+    {
+      "type": "tv",
+      "id": "food",
+      "name": "Food & Home",
+      "extra": [
+        {
+          "name": "skip",
+          "isRequired": false
+        }
+      ]
+    },
+    {
+      "type": "tv",
+      "id": "classics",
+      "name": "Westerns & Classic TV",
+      "extra": [
+        {
+          "name": "skip",
+          "isRequired": false
+        }
+      ]
+    },
+    {
+      "type": "tv",
+      "id": "music",
+      "name": "Music",
+      "extra": [
+        {
+          "name": "skip",
+          "isRequired": false
+        }
+      ]
+    },
+    {
+      "type": "tv",
+      "id": "latino",
+      "name": "En Español",
+      "extra": [
+        {
+          "name": "skip",
+          "isRequired": false
+        }
+      ]
+    },
+    {
+      "type": "tv",
+      "id": "local",
+      "name": "Local News",
+      "extra": [
+        {
+          "name": "skip",
+          "isRequired": false
+        }
+      ]
+    },
+    {
+      "type": "tv",
       "id": "all",
-      "name": "USA Free TV",
+      "name": "All Channels",
       "extra": [
         {
           "name": "genre",

@@ -28,5 +28,23 @@
     "Latino": 78,
     "Faith": 21,
     "Shopping": 6
+  },
+  "channels_by_theme": {
+    "Popular Free Channels": 171,
+    "Series 24/7": 241,
+    "News 24/7": 46,
+    "Sports": 83,
+    "Movies": 93,
+    "True Crime": 62,
+    "Comedy": 52,
+    "Kids & Family": 60,
+    "Anime & Gaming": 24,
+    "Game Shows": 29,
+    "Nature, History & Science": 40,
+    "Food & Home": 61,
+    "Westerns & Classic TV": 45,
+    "Music": 83,
+    "En Espa\u00f1ol": 78,
+    "Local News": 73
   }
 }

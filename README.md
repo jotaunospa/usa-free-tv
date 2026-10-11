@@ -15,6 +15,18 @@ stremio://raw.githubusercontent.com/jotaunospa/usa-free-tv/main/manifest.json
 Or paste `https://raw.githubusercontent.com/jotaunospa/usa-free-tv/main/manifest.json`
 into Stremio → Addons → search box.
 
+## Themed rows
+
+The addon adds rows to the Stremio home screen: Popular Free Channels, Series 24/7,
+News 24/7, Sports, Movies, True Crime, Comedy, Kids & Family, Anime & Gaming,
+Game Shows, Nature/History/Science, Food & Home, Westerns & Classic TV, Music,
+En Español and Local News. "All Channels" in Discover has a genre filter.
+
+Themes come from each service's own categories and from the EPG: a channel whose
+schedule repeats the show it is named after joins **Series 24/7**, and every channel
+description lists the shows it airs most. Rows with fewer than 5 channels are hidden.
+Edit `THEMES` in `generator/build.py` to add or change rows.
+
 ## Sources
 
 | Source | What it adds |

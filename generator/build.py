@@ -135,6 +135,37 @@ NAME_GENRE_HINTS = [
 ]
 
 
+# Themed catalogs shown as rows on the Stremio home screen, in this order.
+# A channel joins a theme when any rule matches: one of its genres, a word in a
+# provider's own category, or a regex on its name.
+THEMES = [
+    # id, row name, genres, provider-category words, name regex
+    ("popular", "Popular Free Channels", [], [], None),   # carried by 2+ services
+    ("series", "Series 24/7", [], [], None),              # EPG shows one series all day
+    ("news", "News 24/7", ["News"], [], None),
+    ("sports", "Sports", ["Sports"], [], None),
+    ("movies", "Movies", ["Movies"], [], None),
+    ("truecrime", "True Crime", [], ["true crime", "crime"],
+     r"\b(crime|cops|forensic|murder|detective|csi|investigat|court|judge|fbi|homicide)"),
+    ("comedy", "Comedy", ["Comedy"], [], None),
+    ("kids", "Kids & Family", ["Kids"], [], None),
+    ("anime", "Anime & Gaming", [], ["anime", "gaming"],
+     r"\b(anime|gaming|esports|crunchyroll|yu gi oh|pokemon|naruto|gundam)"),
+    ("gameshows", "Game Shows", [], ["game show", "daytime"],
+     r"\b(game show|price is right|family feud|deal or no deal|jeopardy|wheel of fortune|buzzr|match game|lets make a deal)"),
+    ("nature", "Nature, History & Science", ["Documentaries"], [], None),
+    ("food", "Food & Home", [], ["food", "cooking", "home"],
+     r"\b(cook|kitchen|food|chef|bbq|bake|baking|recipe|tasty|home improvement)"),
+    ("classics", "Westerns & Classic TV", ["Classics"], [], None),
+    ("music", "Music", ["Music"], [], None),
+    ("latino", "En Español", ["Latino"], [], None),
+    ("local", "Local News", ["Local"], [], None),
+]
+
+# Genres whose EPG repeats one title for reasons other than being a series marathon.
+NOT_SERIES = {"News", "Local", "Sports", "Music", "Shopping", "Faith", "Movies"}
+
+
 # --------------------------------------------------------------------------- #
 # Fetching
 # --------------------------------------------------------------------------- #
@@ -177,6 +208,7 @@ class Entry:
     background: str = ""
     description: str = ""
     groups: list[str] = field(default_factory=list)
+    programs: list[str] = field(default_factory=list)  # EPG titles, in airing order
 
 
 @dataclass
@@ -243,6 +275,46 @@ def genre_for(groups: list[str], name: str) -> list[str]:
                 found.append(genre)
                 break
     return found[:2] or ["Entertainment"]
+
+
+def lineup(ch: "Channel") -> tuple[str | None, list[str]]:
+    """Return (series shown 24/7 or None, most frequent shows) from EPG titles."""
+    titles = max((e.programs for e in ch.entries), key=len, default=[])
+    if not titles:
+        return None, []
+    counts: dict[str, int] = {}
+    for t in titles:
+        t = t.strip()
+        counts[t] = counts.get(t, 0) + 1
+    ranked = sorted(counts, key=lambda t: -counts[t])
+    top = ranked[0]
+    chan = norm(ch.primary.name)
+    # The EPG only covers about a day, so a weekend marathon looks like a series
+    # channel. Require the channel to be named after the show it repeats.
+    stop = {"the", "a", "of", "and", "tv", "la", "el", "los", "las", "de", "pluto", "24", "7", "channel"}
+    shared = (set(norm(top).split()) & set(chan.split())) - stop
+    series = top if len(titles) >= 4 and counts[top] / len(titles) >= 0.75 and shared else None
+    shows = [t for t in ranked if norm(t) != chan][:5]
+    return series, shows
+
+
+def themes_for(groups: list[str], name: str, genres: list[str], providers: int,
+               series: str | None) -> list[str]:
+    gl = " | ".join(groups).lower()
+    n = norm(name)
+    out = []
+    for tid, _, tgenres, words, rx in THEMES:
+        if tid == "popular":
+            hit = providers >= 2
+        elif tid == "series":
+            hit = series is not None and not (set(genres) & NOT_SERIES)
+        else:
+            hit = (any(g in genres for g in tgenres)
+                   or any(w in gl for w in words)
+                   or bool(rx and re.search(rx, n)))
+        if hit:
+            out.append(tid)
+    return out
 
 
 def is_pay_tv(name: str) -> bool:
@@ -319,6 +391,10 @@ def mjh_url_index() -> dict[str, str]:
 # Sources
 # --------------------------------------------------------------------------- #
 
+def titles(c: dict) -> list[str]:
+    return [p[1] for p in c.get("programs", []) if len(p) > 1 and p[1]]
+
+
 def src_pluto(index: dict[str, str]) -> list[Entry]:
     d = fetch_json(f"{MJH_RAW}/PlutoTV/.channels.json.gz")
     if not d:
@@ -327,7 +403,7 @@ def src_pluto(index: dict[str, str]) -> list[Entry]:
     for cid, c in d["regions"]["us"]["channels"].items():
         out.append(Entry("pluto", c["name"], index.get(cid, f"{JMP}/plu-{cid}.m3u8"),
                          c.get("logo", ""), c.get("art", ""), c.get("description", ""),
-                         [c.get("group", "")]))
+                         [c.get("group", "")], titles(c)))
     return out
 
 
@@ -339,7 +415,8 @@ def src_samsung(index: dict[str, str]) -> list[Entry]:
     out = []
     for cid, c in d["regions"]["us"]["channels"].items():
         out.append(Entry("samsung", c["name"], index.get(cid, f"{JMP}/{pattern.format(id=cid)}"),
-                         c.get("logo", ""), "", c.get("description", ""), [c.get("group", "")]))
+                         c.get("logo", ""), "", c.get("description", ""), [c.get("group", "")],
+                         titles(c)))
     return out
 
 
@@ -351,7 +428,7 @@ def src_roku(index: dict[str, str]) -> list[Entry]:
     for cid, c in d["channels"].items():
         if cid in index:  # stream URL only known via the published playlist
             out.append(Entry("roku", c["name"], index[cid], c.get("logo", ""), c.get("fanart", ""),
-                             c.get("description", ""), c.get("groups", [])))
+                             c.get("description", ""), c.get("groups", []), titles(c)))
     return out
 
 
@@ -362,7 +439,7 @@ def src_plex(index: dict[str, str]) -> list[Entry]:
     out = []
     for cid, c in d["channels"].items():
         if "us" in c.get("regions", []) and cid in index:
-            out.append(Entry("plex", c["name"], index[cid], c.get("logo", ""), "", "", []))
+            out.append(Entry("plex", c["name"], index[cid], c.get("logo", ""), "", "", [], titles(c)))
     return out
 
 
@@ -479,6 +556,15 @@ def build(base_url: str, check: bool) -> None:
         providers = sorted({e.provider for e in ch.entries}, key=lambda x: PROVIDERS[x][1])
         avail = "Available on: " + ", ".join(PROVIDERS[x][0] for x in providers)
         desc = ch.best("description")
+        series, shows = lineup(ch)
+        themes = themes_for(groups, p.name, genres, len(providers), series)
+        extra_lines = []
+        if series and "series" in themes:
+            extra_lines.append(f"24/7: {series}")
+        elif shows:
+            extra_lines.append("Shows: " + ", ".join(shows))
+        extra_lines.append(avail)
+        tail = "\n".join(extra_lines)
         logo = ch.best("logo") or f"{base_url}/public/logo.png"
         meta = {
             "id": cid,
@@ -488,7 +574,7 @@ def build(base_url: str, check: bool) -> None:
             "posterShape": "square",
             "logo": logo,
             "genres": genres,
-            "description": f"{desc}\n\n{avail}".strip() if desc else avail,
+            "description": f"{desc}\n\n{tail}" if desc else tail,
         }
         bg = ch.best("background")
         if bg:
@@ -502,7 +588,7 @@ def build(base_url: str, check: bool) -> None:
             }
             for e in sorted(ch.entries, key=lambda e: PROVIDERS[e.provider][1])
         ]
-        metas.append((meta, streams, len(providers)))
+        metas.append((meta, streams, len(providers), themes))
 
     # Most widely carried channels first, then alphabetical.
     metas.sort(key=lambda m: (-m[2], m[0]["name"].lower()))
@@ -511,15 +597,16 @@ def build(base_url: str, check: bool) -> None:
     for d in ("catalog", "meta", "stream"):
         shutil.rmtree(out / d, ignore_errors=True)
 
-    for meta, streams, _ in metas:
+    for meta, streams, *_ in metas:
         write_json(out / "meta" / "tv" / f"{meta['id']}.json", {"meta": meta})
         write_json(out / "stream" / "tv" / f"{meta['id']}.json", {"streams": streams})
 
     previews = [{k: m[k] for k in ("id", "type", "name", "poster", "posterShape", "genres")}
-                for m, _, _ in metas]
+                for m, *_ in metas]
+    theme_of = {m["id"]: t for m, _, _, t in metas}
     used_genres = [g for g in GENRES if any(g in m["genres"] for m in previews)]
 
-    def write_pages(items: list[dict], genre: str | None) -> None:
+    def write_pages(catalog: str, items: list[dict], genre: str | None = None) -> None:
         for skip in range(0, max(len(items), 1), PAGE_SIZE):
             page = {"metas": items[skip:skip + PAGE_SIZE]}
             extras = []
@@ -527,12 +614,23 @@ def build(base_url: str, check: bool) -> None:
                 extras.append(f"genre={genre}")
             if skip:
                 extras.append(f"skip={skip}")
-            name = "all.json" if not extras else "all/" + "&".join(extras) + ".json"
+            name = f"{catalog}.json" if not extras else f"{catalog}/" + "&".join(extras) + ".json"
             write_json(out / "catalog" / "tv" / name, page)
 
-    write_pages(previews, None)
+    write_pages("all", previews)
     for g in used_genres:
-        write_pages([m for m in previews if g in m["genres"]], g)
+        write_pages("all", [m for m in previews if g in m["genres"]], g)
+
+    theme_catalogs = []
+    theme_counts = {}
+    for tid, tname, *_ in THEMES:
+        items = [m for m in previews if tid in theme_of[m["id"]]]
+        if len(items) < 5:  # too thin to deserve a row
+            continue
+        write_pages(tid, items)
+        theme_counts[tname] = len(items)
+        theme_catalogs.append({"type": "tv", "id": tid, "name": tname,
+                               "extra": [{"name": "skip", "isRequired": False}]})
 
     manifest = {
         "id": "community.usa-free-tv",
@@ -545,10 +643,10 @@ def build(base_url: str, check: bool) -> None:
         "resources": ["catalog", "meta", "stream"],
         "types": ["tv"],
         "idPrefixes": [ID_PREFIX],
-        "catalogs": [{
+        "catalogs": theme_catalogs + [{
             "type": "tv",
             "id": "all",
-            "name": "USA Free TV",
+            "name": "All Channels",
             "extra": [
                 {"name": "genre", "isRequired": False, "options": used_genres},
                 {"name": "skip", "isRequired": False},
@@ -563,13 +661,14 @@ def build(base_url: str, check: bool) -> None:
         manifest["version"] = prev["version"] if same else bump(prev.get("version", "1.0.0"))
     (ROOT / "manifest.json").write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + "\n")
 
-    by_provider = {p: sum(1 for _, s, _ in metas if any(x["name"] == PROVIDERS[p][0] for x in s)) for p in PROVIDERS}
+    by_provider = {p: sum(1 for _, s, *_ in metas if any(x["name"] == PROVIDERS[p][0] for x in s)) for p in PROVIDERS}
     stats = {
         "channels": len(metas),
-        "streams": sum(len(s) for _, s, _ in metas),
-        "multi_source_channels": sum(1 for *_, n in metas if n > 1),
+        "streams": sum(len(s) for _, s, *_ in metas),
+        "multi_source_channels": sum(1 for _, _, n, _ in metas if n > 1),
         "channels_by_provider": by_provider,
         "channels_by_genre": {g: sum(1 for m in previews if g in m["genres"]) for g in used_genres},
+        "channels_by_theme": theme_counts,
     }
     (ROOT / "stats.json").write_text(json.dumps(stats, indent=2) + "\n")
     print(json.dumps(stats, indent=2))

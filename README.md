@@ -6,14 +6,37 @@ once; when several services carry it, every source is offered as a backup stream
 Hosted entirely on GitHub raw URLs — no server. A GitHub Action rebuilds the
 channel list every day.
 
-## Install
+## Install / Instalar
+
+**Manifest URL** (copy and paste / copiar y pegar):
+
+```
+https://raw.githubusercontent.com/jotaunospa/usa-free-tv/main/manifest.json
+```
+
+**Stremio desktop, TV or mobile app**
+
+1. Open Stremio → **Addons** (puzzle icon).
+2. Paste the manifest URL above into the search box at the top.
+3. Click **Install**.
+
+**Stremio Web** — open this link and click **Install**:
+
+```
+https://web.stremio.com/#/addons?addon=https%3A%2F%2Fraw.githubusercontent.com%2Fjotaunospa%2Fusa-free-tv%2Fmain%2Fmanifest.json
+```
+
+**One-click link** (opens the installed Stremio app directly):
 
 ```
 stremio://raw.githubusercontent.com/jotaunospa/usa-free-tv/main/manifest.json
 ```
 
-Or paste `https://raw.githubusercontent.com/jotaunospa/usa-free-tv/main/manifest.json`
-into Stremio → Addons → search box.
+After installing, the themed rows appear on the Stremio **Board** (home) and every
+channel is also under **Discover → TV → USA Free TV**.
+
+> FAST services (Pluto TV, Samsung TV Plus, Tubi, Roku, Plex) are geo-restricted to
+> the US. Outside the US, streams may need a US connection to play.
 
 ## Themed rows
 

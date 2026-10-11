@@ -19,8 +19,8 @@ into Stremio → Addons → search box.
 
 The addon adds rows to the Stremio home screen: Popular Free Channels, Series 24/7,
 News 24/7, Sports, Movies, True Crime, Comedy, Kids & Family, Anime & Gaming,
-Game Shows, History & Discovery (official FAST channels from History, Discovery,
-Smithsonian, BBC Earth...), Nature/History/Science, Food & Home,
+Game Shows, History, Science & Nature (documentaries plus the official FAST channels
+of History, Discovery, Smithsonian, BBC Earth...), Food & Home,
 Westerns & Classic TV, Music, En Español and Local News. "All Channels" in Discover has a genre filter.
 
 Themes come from each service's own categories and from the EPG: a channel whose

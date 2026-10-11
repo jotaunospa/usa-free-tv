@@ -153,14 +153,13 @@ THEMES = [
      r"\b(anime|gaming|esports|crunchyroll|yu gi oh|pokemon|naruto|gundam)"),
     ("gameshows", "Game Shows", [], ["game show", "daytime"],
      r"\b(game show|price is right|family feud|deal or no deal|jeopardy|wheel of fortune|buzzr|match game|lets make a deal)"),
-    # Official FAST channels from History, Discovery, Smithsonian, BBC Earth and similar.
-    # Matched on the channel name or on the series it shows 24/7.
-    ("factual", "History & Discovery", [], [],
+    # Documentaries plus the official FAST channels of History, Discovery, Smithsonian,
+    # BBC Earth and similar, matched on the channel name or the series it shows 24/7.
+    ("factual", "History, Science & Nature", ["Documentaries"], [],
      r"\b(history|discovery|smithsonian|bbc earth|pbs nature|love nature|magellantv|pluto tv science"
      r"|ancient aliens|modern marvels|pawn stars|american pickers|forged in fire|swamp people"
      r"|ice road truckers|curse of oak island|the universe|universe mysteries|mythbusters|how its made"
      r"|gold rush|deadliest catch|naked and afraid|mysteries xplored|xtreme outdoor)\b"),
-    ("nature", "Nature, History & Science", ["Documentaries"], [], None),
     ("food", "Food & Home", [], ["food", "cooking", "home"],
      r"\b(cook|kitchen|food|chef|bbq|bake|baking|recipe|tasty|home improvement)"),
     ("classics", "Westerns & Classic TV", ["Classics"], [], None),

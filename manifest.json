@@ -129,18 +129,7 @@
     {
       "type": "tv",
       "id": "factual",
-      "name": "History & Discovery",
-      "extra": [
-        {
-          "name": "skip",
-          "isRequired": false
-        }
-      ]
-    },
-    {
-      "type": "tv",
-      "id": "nature",
-      "name": "Nature, History & Science",
+      "name": "History, Science & Nature",
       "extra": [
         {
           "name": "skip",

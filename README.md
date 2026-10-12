@@ -35,12 +35,15 @@ stremio://raw.githubusercontent.com/jotaunospa/usa-free-tv/main/manifest.json
 After installing, the themed rows appear on the Stremio **Board** (home) and every
 channel is also under **Discover → TV → USA Free TV**.
 
-> FAST services (Pluto TV, Samsung TV Plus, Tubi, Roku, Plex) are geo-restricted to
-> the US. Outside the US, streams may need a US connection to play.
+> Pluto TV, Samsung TV Plus, Roku and Plex only stream to US connections. Tubi live
+> channels and most public streams play from abroad (tested from Chile). Each stream
+> is labelled **✅ No VPN needed** or **🇺🇸 US only**, and the ones that need no VPN
+> are listed first.
 
 ## Themed rows
 
-The addon adds rows to the Stremio home screen: Popular Free Channels, Series 24/7,
+The addon adds rows to the Stremio home screen: Watch Without VPN (channels with
+at least one stream that plays outside the US), Popular Free Channels, Series 24/7,
 News 24/7, Sports, Movies, True Crime, Comedy, Kids & Family, Anime & Gaming,
 Game Shows, History, Science & Nature (documentaries plus the official FAST channels
 of History, Discovery, Smithsonian, BBC Earth...), Food & Home,
@@ -50,6 +53,16 @@ Themes come from each service's own categories and from the EPG: a channel whose
 schedule repeats the show it is named after joins **Series 24/7**, and every channel
 description lists the shows it airs most. Rows with fewer than 5 channels are hidden.
 Edit `THEMES` in `generator/build.py` to add or change rows.
+
+## Channel names
+
+Names include the shows a channel is known for (`Comedy Central: South Park, RENO 911!`),
+learned from the schedule over time and stored in `data/shows.json`. To rename a channel
+by hand, add a line to `names.json` with its id (the file name in `meta/tv/` without
+`.json`) and push: the addon rebuilds automatically.
+
+Stremio's search box only queries addons with a search endpoint, which a static addon on
+GitHub cannot provide, so browse the rows or **Discover → TV → USA Free TV** instead.
 
 ## Sources
 

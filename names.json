@@ -1,0 +1,5 @@
+{
+  "_help": "Custom channel names. Key = channel id (the file name in meta/tv without .json), value = the name shown in Stremio. Delete a line to go back to the automatic name.",
+  "usfree-comedycentralpluto": "Comedy Central: South Park, RENO 911!",
+  "usfree-mtvpluto": "MTV: The Hills, Punk'd, Siesta Key"
+}

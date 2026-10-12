@@ -69,6 +69,13 @@ PROVIDERS = {
     "iptvorg": ("iptv-org", 7),
 }
 
+# Services that only stream to US IP addresses. Tubi's live channels and most
+# community streams play from abroad (tested from Chile); these need a US connection.
+US_ONLY = {"pluto", "samsung", "roku", "plex"}
+
+# Order in which a channel's streams are offered: sources that play without a VPN first.
+STREAM_ORDER = ["tubi", "iptvorg", "freetv", "pluto", "samsung", "roku", "plex"]
+
 # Pay-TV networks. Community playlists sometimes carry unlicensed restreams of
 # these; they are dropped from community sources. FAST services are official
 # and are not filtered by this list.
@@ -146,6 +153,7 @@ NAME_GENRE_HINTS = [
 # provider's own category, or a regex on its name.
 THEMES = [
     # id, row name, genres, provider-category words, name regex
+    ("novpn", "Watch Without VPN", [], [], None),         # has a stream that plays outside the US
     ("popular", "Popular Free Channels", [], [], None),   # carried by 2+ services
     ("series", "Series 24/7", [], [], None),              # EPG shows one series all day
     ("news", "News 24/7", ["News"], [], None),
@@ -221,6 +229,10 @@ class Entry:
     description: str = ""
     groups: list[str] = field(default_factory=list)
     programs: list[str] = field(default_factory=list)  # EPG titles, in airing order
+
+    @property
+    def needs_us(self) -> bool:
+        return self.provider in US_ONLY or "geo-blocked" in self.name.lower()
 
 
 @dataclass
@@ -311,12 +323,14 @@ def lineup(ch: "Channel") -> tuple[str | None, list[str]]:
 
 
 def themes_for(groups: list[str], name: str, genres: list[str], providers: int,
-               series: str | None) -> list[str]:
+               series: str | None, open_stream: bool) -> list[str]:
     gl = " | ".join(groups).lower()
     n = norm(name)
     out = []
     for tid, _, tgenres, words, rx in THEMES:
-        if tid == "popular":
+        if tid == "novpn":
+            hit = open_stream
+        elif tid == "popular":
             hit = providers >= 2
         elif tid == "series":
             hit = series is not None and not (set(genres) & NOT_SERIES)
@@ -583,7 +597,8 @@ def build(base_url: str, check: bool) -> None:
         avail = "Available on: " + ", ".join(PROVIDERS[x][0] for x in providers)
         desc = ch.best("description")
         series, shows = lineup(ch)
-        themes = themes_for(groups, p.name, genres, len(providers), series)
+        open_stream = any(not e.needs_us for e in ch.entries)
+        themes = themes_for(groups, p.name, genres, len(providers), series, open_stream)
         extra_lines = []
         if series and "series" in themes:
             extra_lines.append(f"24/7: {series}")
@@ -608,16 +623,18 @@ def build(base_url: str, check: bool) -> None:
         streams = [
             {
                 "name": PROVIDERS[e.provider][0],
-                "description": clean_display(e.name),
+                "description": (f"{clean_display(e.name)}\n"
+                                + ("🇺🇸 US only, needs a US VPN" if e.needs_us else "✅ No VPN needed")),
                 "url": e.url,
                 "behaviorHints": {"notWebReady": True},
             }
-            for e in sorted(ch.entries, key=lambda e: PROVIDERS[e.provider][1])
+            for e in sorted(ch.entries, key=lambda e: (e.needs_us, STREAM_ORDER.index(e.provider)))
         ]
         metas.append((meta, streams, len(providers), themes))
 
-    # Most widely carried channels first, then alphabetical.
-    metas.sort(key=lambda m: (-m[2], m[0]["name"].lower()))
+    # In every row: channels that play without a VPN first, then the most widely
+    # carried, then alphabetical.
+    metas.sort(key=lambda m: ("novpn" not in m[3], -m[2], m[0]["name"].lower()))
 
     out = ROOT
     for d in ("catalog", "meta", "stream"):

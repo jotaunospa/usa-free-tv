@@ -322,6 +322,64 @@ def lineup(ch: "Channel") -> tuple[str | None, list[str]]:
     return series, shows
 
 
+# Genres whose EPG titles are not shows worth naming (bulletins, games, songs, films).
+NO_SHOWS_IN_NAME = {"News", "Local", "Sports", "Music", "Shopping", "Faith", "Movies", "Latino"}
+
+# Show history: the EPG only covers about a day, so each build adds what it sees to a
+# running tally per channel. Names then reflect what a channel usually airs, not just today.
+SHOWS_FILE = ROOT / "data" / "shows.json"
+SHOWS_DECAY = 0.9      # older observations fade slowly
+SHOWS_KEEP = 25        # titles remembered per channel
+NAME_MAX = 48          # longest display name before dropping the second show
+
+# Hand-written names win over everything: {"usfree-channel-id": "Display Name"}.
+NAMES_FILE = ROOT / "names.json"
+
+
+def load_json(path: Path) -> dict:
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+
+
+def update_shows(history: dict, cid: str, ch: "Channel") -> dict[str, float]:
+    titles = max((e.programs for e in ch.entries), key=len, default=[])
+    tally = {t: v * SHOWS_DECAY for t, v in history.get(cid, {}).items()}
+    for t in titles:
+        t = t.strip()
+        if t:
+            tally[t] = tally.get(t, 0) + 1
+    top = dict(sorted(tally.items(), key=lambda kv: -kv[1])[:SHOWS_KEEP])
+    if top:
+        history[cid] = {t: round(v, 2) for t, v in top.items()}
+    return top
+BRAND_SUFFIX = re.compile(r"\s+(pluto tv|on pluto tv|presented by history|by history)$", re.I)
+
+
+def headline_shows(tally: dict[str, float]) -> list[str]:
+    """Shows that fill at least a sixth of the remembered schedule, biggest first."""
+    total = sum(tally.values())
+    if total < 4:
+        return []
+    return [t for t in sorted(tally, key=lambda t: -tally[t]) if tally[t] / total >= 1 / 6]
+
+
+def display_name(ch: "Channel", genres: list[str], series: str | None,
+                 tally: dict[str, float]) -> str:
+    """Channel name a viewer can recognise, e.g. 'Comedy Central: South Park, RENO 911!'."""
+    name = clean_display(ch.primary.name)
+    base = BRAND_SUFFIX.sub("", name).strip() or name
+    if series or set(genres) & NO_SHOWS_IN_NAME:
+        return base
+    have = norm(base)
+    shows = [t for t in headline_shows(tally)
+             if norm(t) and norm(t) not in have and have not in norm(t)][:2]
+    while shows and len(f"{base}: {', '.join(shows)}") > NAME_MAX:
+        shows.pop()
+    return f"{base}: {', '.join(shows)}" if shows else base
+
+
 def themes_for(groups: list[str], name: str, genres: list[str], providers: int,
                series: str | None, open_stream: bool) -> list[str]:
     gl = " | ".join(groups).lower()
@@ -588,6 +646,8 @@ def build(base_url: str, check: bool) -> None:
     if len(channels) < 200:
         sys.exit(f"Only {len(channels)} channels built; refusing to overwrite the addon.")
 
+    show_history = load_json(SHOWS_FILE)
+    names = {k: v for k, v in load_json(NAMES_FILE).items() if not k.startswith("_")}
     metas = []
     for cid, ch in channels.items():
         p = ch.primary
@@ -597,6 +657,10 @@ def build(base_url: str, check: bool) -> None:
         avail = "Available on: " + ", ".join(PROVIDERS[x][0] for x in providers)
         desc = ch.best("description")
         series, shows = lineup(ch)
+        tally = update_shows(show_history, cid, ch)
+        if tally:
+            chan = norm(p.name)
+            shows = [t for t in sorted(tally, key=lambda t: -tally[t]) if norm(t) != chan][:5]
         open_stream = any(not e.needs_us for e in ch.entries)
         themes = themes_for(groups, p.name, genres, len(providers), series, open_stream)
         extra_lines = []
@@ -610,7 +674,8 @@ def build(base_url: str, check: bool) -> None:
         meta = {
             "id": cid,
             "type": "tv",
-            "name": clean_display(p.name),
+            "name": names.get(cid) or display_name(ch, genres, series if "series" in themes else None,
+                                                   tally),
             "poster": logo,
             "posterShape": "square",
             "logo": logo,
@@ -631,6 +696,11 @@ def build(base_url: str, check: bool) -> None:
             for e in sorted(ch.entries, key=lambda e: (e.needs_us, STREAM_ORDER.index(e.provider)))
         ]
         metas.append((meta, streams, len(providers), themes))
+
+    SHOWS_FILE.parent.mkdir(parents=True, exist_ok=True)
+    live = {m[0]["id"] for m in metas}
+    SHOWS_FILE.write_text(json.dumps({k: v for k, v in sorted(show_history.items()) if k in live},
+                                     ensure_ascii=False, indent=0) + "\n", encoding="utf-8")
 
     # In every row: channels that play without a VPN first, then the most widely
     # carried, then alphabetical.

@@ -1,1 +1,1 @@
-{"streams":[{"name":"iptv-org","description":"Bloomberg TV US\n✅ No VPN needed","url":"https://bloomberg.com/media-manifest/streams/us.m3u8","behaviorHints":{"notWebReady":true}}]}
+{"streams":[{"name":"iptv-org","description":"Bloomberg TV US\n✅ No VPN needed","url":"https://bloomberg.com/media-manifest/streams/us.m3u8","behaviorHints":{"notWebReady":true}},{"name":"Plex","description":"Bloomberg TV\n🇺🇸 US only, needs a US VPN","url":"https://jmp2.uk/plex-6a1610bebdf296985fd95603-68fafc6e558214386ab7ca3a.m3u8","behaviorHints":{"notWebReady":true}}]}

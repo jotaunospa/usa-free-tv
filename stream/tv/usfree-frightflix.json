@@ -1,1 +1,1 @@
-{"streams":[{"name":"iptv-org","description":"FrightFlix\n✅ No VPN needed","url":"https://stream-us-east-1.getpublica.com/playlist.m3u8?network_id=2229","behaviorHints":{"notWebReady":true}}]}
+{"streams":[{"name":"iptv-org","description":"FrightFlix\n✅ No VPN needed","url":"https://stream-us-east-1.getpublica.com/playlist.m3u8?network_id=2229","behaviorHints":{"notWebReady":true}},{"name":"Plex","description":"FrightFlix\n🇺🇸 US only, needs a US VPN","url":"https://jmp2.uk/plex-6a1610bebdf296985fd95603-621674502c2627c068e73ada.m3u8","behaviorHints":{"notWebReady":true}}]}

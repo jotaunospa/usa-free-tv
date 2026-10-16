@@ -1,1 +1,1 @@
-{"streams":[{"name":"iptv-org","description":"AfroLandTV\n✅ No VPN needed","url":"https://alt-al.otteravision.com/alt/al/al.m3u8","behaviorHints":{"notWebReady":true}}]}
+{"streams":[{"name":"iptv-org","description":"AfroLandTV\n✅ No VPN needed","url":"https://alt-al.otteravision.com/alt/al/al.m3u8","behaviorHints":{"notWebReady":true}},{"name":"Plex","description":"AfroLandTV\n🇺🇸 US only, needs a US VPN","url":"https://jmp2.uk/plex-6a1610bebdf296985fd95603-60e737a4ebef9d002c4d0a0c.m3u8","behaviorHints":{"notWebReady":true}}]}

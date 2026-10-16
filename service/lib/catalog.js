@@ -60,7 +60,8 @@ function pool(index, prefs) {
 function rows(index, prefs) {
   const list = pool(index, prefs);
   const hidden = new Set(prefs.hide);
-  if (prefs.region === "us") hidden.add("novpn");
+  // No row for "Watch Without VPN": outside the US those channels already lead every row.
+  hidden.add("novpn");
   const out = [{ id: "fav", name: "⭐ My Favorites", items: favItems(index, prefs) }];
   if (prefs.lang === "all") {
     out.push({ id: "otherlang", name: "En Español y otros idiomas", items: list.filter((c) => c.lang !== "en") });

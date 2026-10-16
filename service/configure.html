@@ -177,7 +177,7 @@ function visibleChannels() {
 }
 
 function renderThemes() {
-  const themes = S.index.themes.filter(([id]) => !(id === "novpn" && S.prefs.region === "us"));
+  const themes = S.index.themes.filter(([id]) => id !== "novpn");
   $("themes").innerHTML = themes.map(([id, name]) =>
     `<button type="button" class="chip" data-t="${esc(id)}" aria-pressed="${!S.prefs.hide.includes(id)}">${esc(name)}</button>`).join("");
 }

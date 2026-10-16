@@ -28,6 +28,7 @@ import unicodedata
 import urllib.parse
 import urllib.request
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -56,6 +57,7 @@ TUBI_HOST = "live-manifest.production-public.tubi.io"
 
 IPTV_ORG_US = "https://raw.githubusercontent.com/iptv-org/iptv/master/streams/us.m3u"
 IPTV_ORG_CHANNELS = "https://iptv-org.github.io/api/channels.json"
+IPTV_ORG_FEEDS = "https://iptv-org.github.io/api/feeds.json"
 FREE_TV = "https://raw.githubusercontent.com/Free-TV/IPTV/master/playlist.m3u8"
 
 # Lower number = listed first and preferred for name/logo/description.
@@ -108,12 +110,11 @@ BLOCKED_HOSTS = ("univisionnow.com", "aynaott.com", "smartplaytv.in", "cammonito
 GENRES = [
     "News", "Local", "Sports", "Movies", "Entertainment", "Comedy", "Drama",
     "Reality", "Classics", "Sci-Fi", "Kids", "Documentaries",
-    "Lifestyle", "Music", "Latino", "Faith", "Shopping",
+    "Lifestyle", "Music", "Faith", "Shopping",
 ]
 
 # First matching rule wins. Matched against the lowercased provider group.
 GENRE_RULES = [
-    ("Latino", ["espanol", "español", "latino", "hispanic"]),
     ("Local", ["local news", "local"]),
     ("News", ["news", "opinion", "weather", "talk"]),
     ("Sports", ["sport", "racing", "ball", "boxing", "wrestling", "martial", "soccer",
@@ -178,7 +179,6 @@ THEMES = [
      r"\b(cook|kitchen|food|chef|bbq|bake|baking|recipe|tasty|home improvement)"),
     ("classics", "Westerns & Classic TV", ["Classics"], [], None),
     ("music", "Music", ["Music"], [], None),
-    ("latino", "En Español", ["Latino"], [], None),
     ("local", "Local News", ["Local"], [], None),
 ]
 
@@ -229,6 +229,7 @@ class Entry:
     description: str = ""
     groups: list[str] = field(default_factory=list)
     programs: list[str] = field(default_factory=list)  # EPG titles, in airing order
+    tvg_id: str = ""  # iptv-org channel id, used to look up its language
 
     @property
     def needs_us(self) -> bool:
@@ -412,6 +413,86 @@ def is_pay_tv(name: str) -> bool:
     return " ".join(words) in BROADCAST
 
 
+# --------------------------------------------------------------------------- #
+# English only: no Spanish-language or dubbed channels
+# --------------------------------------------------------------------------- #
+
+# Provider categories that hold Spanish or other non-English channels.
+FOREIGN_GROUPS = ("espanol", "español", "latino", "spanish", "portugu", "brasil",
+                  "french", "francais", "arabic", "hindi", "korean", "chinese", "vietnam")
+
+# Channel-name words that mark a non-English channel ("Pluto TV Cine", "Telemundo
+# Noticias", "Univision Novelas"...). Matched on the accent-free, lowercased name.
+FOREIGN_NAME = re.compile(
+    r"\b(espanol|en espanol|latino|latina|latinx|spanish|telemundo|univision|unimas|galavision"
+    r"|estrella|azteca|televisa|multimedios|vme|novelas?|telenovelas?|noticias|noticiero"
+    r"|peliculas|cine|deportes|infantil|canal|clasicos|comedia|accion|aventura"
+    r"|misterio|documentales|cocina|hogar|musica|mexicana|mexicano|colombia|pelimex|amor"
+    r"|ministerio|iglesia|en alerta|en vivo|en directo|exitos|kanal d|todo \\w+|narco\\w*|teve|cindie"
+    r"|clic|conflicto|canela|familia"
+    r"|puerto rico|caribe|portugues|brasil|francais|arabic|hindi|korean|chinese|vietnamese"
+    r"|russian|filipino|tagalog|punjabi|tamil|telugu|bangla|urdu|persian|farsi|haitian)\b")
+
+# Function words that only show up in Spanish/Portuguese/French text. A description or
+# schedule made mostly of these belongs to a non-English channel.
+FOREIGN_WORDS = {
+    "el", "los", "las", "del", "con", "para", "una", "que", "por", "sus", "más", "como",
+    "este", "esta", "todo", "todos", "nuestro", "nuestra", "películas", "noticias", "programas",
+    "lo", "mejor", "vida", "amor", "mundo", "historias", "serie", "desde", "sobre", "entre",
+    "também", "não", "uma", "pelo", "pela", "les", "des", "et", "pour", "avec", "une", "dans",
+}
+ENGLISH_WORDS = {
+    "the", "and", "of", "to", "with", "for", "your", "from", "on", "is", "are", "this", "all",
+    "you", "its", "their", "new", "every", "show", "shows", "series", "watch", "best", "day",
+}
+# Spanish/Portuguese letters only; é, è, ç, à... also appear in English (Pokémon, café, Barça).
+ACCENTS = set("ñáíóúãõ¿¡")
+# US place names with Spanish articles, removed before counting words.
+PLACES = re.compile(r"\b(los angeles|las vegas|las cruces|el paso|el dorado|el centro|la jolla"
+                    r"|los alamos|la crosse|san \w+|santa \w+)\b")
+
+# iptv-org publishes each feed's language (ISO 639-3). Filled by load_iptv_languages().
+IPTV_LANGS: dict[str, set[str]] = {}
+
+
+def load_iptv_languages() -> None:
+    feeds = fetch_json(IPTV_ORG_FEEDS)
+    for f in feeds or []:
+        langs = f.get("languages") or []
+        if f.get("channel") and langs:
+            IPTV_LANGS.setdefault(f["channel"], set()).update(langs)
+    print(f"  iptv-org languages: {len(IPTV_LANGS)} channels")
+
+
+def is_english(e: Entry) -> bool:
+    """False for Spanish-language and other non-English (dubbed) channels."""
+    if any(any(w in g.lower() for w in FOREIGN_GROUPS) for g in e.groups):
+        return False
+    raw_name = unicodedata.normalize("NFKD", e.name).encode("ascii", "ignore").decode().lower()
+    if FOREIGN_NAME.search(norm(e.name)) or FOREIGN_NAME.search(raw_name):  # "(en español)"
+        return False
+    if any(c in ACCENTS for c in e.name.lower()):  # "ÚNICA TV", "Mi Último Deseo"
+        return False
+    if e.tvg_id:
+        langs = IPTV_LANGS.get(e.tvg_id)
+        if langs and "eng" not in langs:
+            return False
+    # A name built from Spanish articles: "La Rosa de Guadalupe", "Los Asesinatos de Midsomer".
+    name_words = PLACES.sub(" ", raw_name).split()
+    if sum(w in FOREIGN_WORDS or w in {"la", "de", "un"} for w in name_words) >= 2:
+        return False
+    # Each show title counts once, so a repeated English title can't drown out a Spanish
+    # description. US place names are removed: "Las Vegas" is an English show.
+    shows = list(dict.fromkeys(t.strip() for t in e.programs[:60]))
+    text = PLACES.sub(" ", " ".join([e.name, e.description, *shows]).lower())
+    words = re.findall(r"[a-zñáéíóúãõçàèêôâ]+", text)
+    if not words:
+        return True
+    foreign = sum(w in FOREIGN_WORDS for w in words) + 2 * sum(c in ACCENTS for c in text)
+    english = sum(w in ENGLISH_WORDS for w in words)
+    return not (foreign >= 3 and foreign > 1.5 * english)
+
+
 def url_is_clean(url: str) -> bool:
     """Community streams must use a hostname on a default port."""
     try:
@@ -524,9 +605,9 @@ def src_roku(index: dict[str, str]) -> list[Entry]:
         return []
     out = []
     for cid, c in d["channels"].items():
-        if cid in index:  # stream URL only known via the published playlist
-            out.append(Entry("roku", c["name"], index[cid], c.get("logo", ""), c.get("fanart", ""),
-                             c.get("description", ""), c.get("groups", []), titles(c)))
+        out.append(Entry("roku", c["name"], index.get(cid, f"{JMP}/rok-{cid}.m3u8"),
+                         c.get("logo", ""), c.get("fanart", ""), c.get("description", ""),
+                         c.get("groups", []), titles(c)))
     return out
 
 
@@ -536,8 +617,10 @@ def src_plex(index: dict[str, str]) -> list[Entry]:
         return []
     out = []
     for cid, c in d["channels"].items():
-        if "us" in c.get("regions", []) and cid in index:
-            out.append(Entry("plex", c["name"], index[cid], c.get("logo", ""), "", "", [], titles(c)))
+        if "us" in c.get("regions", []):
+            out.append(Entry("plex", c["name"], index.get(cid, f"{JMP}/plex-{cid}.m3u8"),
+                             c.get("logo", ""), "", c.get("description", ""),
+                             c.get("groups", []), titles(c)))
     return out
 
 
@@ -557,7 +640,7 @@ def src_community(check: bool) -> list[Entry]:
         for it in parse_m3u(data.decode("utf-8", "replace")):
             tid = it.get("tvg-id", "").split("@")[0]
             raw.append(Entry("iptvorg", it["title"], it["url"], it.get("tvg-logo", ""), "", "",
-                             cats.get(tid, [])))
+                             cats.get(tid, []), tvg_id=tid))
     data = fetch(FREE_TV)
     if data:
         for it in parse_m3u(data.decode("utf-8", "replace")):
@@ -640,11 +723,27 @@ def build(base_url: str, check: bool) -> None:
         got = fn(index)
         print(f"  {fn.__name__[4:]}: {len(got)}")
         entries += got
+    load_iptv_languages()
     entries += src_community(check)
 
-    channels = resolve_ids(merge(entries))
-    if len(channels) < 200:
-        sys.exit(f"Only {len(channels)} channels built; refusing to overwrite the addon.")
+    foreign = [e for e in entries if not is_english(e)]
+    entries = [e for e in entries if is_english(e)]
+    print(f"  English only: {len(foreign)} non-English entries kept apart")
+    write_json(ROOT / "data" / "non_english.json",
+               sorted({f"{PROVIDERS[e.provider][0]}: {clean_display(e.name)}" for e in foreign}))
+
+    # English and non-English channels are merged separately, so a Spanish dub never
+    # becomes a backup stream of the English channel with the same name.
+    english = merge(entries)
+    taken = {ch.key for ch in english}
+    other = merge(foreign)
+    for ch in other:
+        if ch.key in taken:
+            ch.key += "es"
+    lang_of = {id(ch): "en" for ch in english} | {id(ch): "other" for ch in other}
+    channels = resolve_ids(english + other)
+    if len(english) < 200:
+        sys.exit(f"Only {len(english)} channels built; refusing to overwrite the addon.")
 
     show_history = load_json(SHOWS_FILE)
     names = {k: v for k, v in load_json(NAMES_FILE).items() if not k.startswith("_")}
@@ -695,7 +794,7 @@ def build(base_url: str, check: bool) -> None:
             }
             for e in sorted(ch.entries, key=lambda e: (e.needs_us, STREAM_ORDER.index(e.provider)))
         ]
-        metas.append((meta, streams, len(providers), themes))
+        metas.append((meta, streams, len(providers), themes, lang_of[id(ch)], providers))
 
     SHOWS_FILE.parent.mkdir(parents=True, exist_ok=True)
     live = {m[0]["id"] for m in metas}
@@ -710,13 +809,28 @@ def build(base_url: str, check: bool) -> None:
     for d in ("catalog", "meta", "stream"):
         shutil.rmtree(out / d, ignore_errors=True)
 
+    # Meta and stream files exist for every channel, so the configurable service can
+    # serve non-English channels to people who ask for them.
     for meta, streams, *_ in metas:
         write_json(out / "meta" / "tv" / f"{meta['id']}.json", {"meta": meta})
         write_json(out / "stream" / "tv" / f"{meta['id']}.json", {"streams": streams})
 
+    # Compact index read by the configuration page and the configurable service
+    # (service/). Row order is the default sort order.
+    write_json(out / "data" / "index.json", {
+        "updated": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "themes": [[tid, tname] for tid, tname, *_ in THEMES],
+        "fields": ["id", "name", "poster", "genres", "themes", "lang", "providers"],
+        "channels": [[m["id"], m["name"], m["poster"], m["genres"], t, lang, provs]
+                     for m, _, _, t, lang, provs in metas],
+    })
+
+    # The static addon stays English-only.
+    metas = [m for m in metas if m[4] == "en"]
+
     previews = [{k: m[k] for k in ("id", "type", "name", "poster", "posterShape", "genres")}
                 for m, *_ in metas]
-    theme_of = {m["id"]: t for m, _, _, t in metas}
+    theme_of = {m["id"]: t for m, _, _, t, *_ in metas}
     used_genres = [g for g in GENRES if any(g in m["genres"] for m in previews)]
 
     def write_pages(catalog: str, items: list[dict], genre: str | None = None) -> None:
@@ -778,7 +892,7 @@ def build(base_url: str, check: bool) -> None:
     stats = {
         "channels": len(metas),
         "streams": sum(len(s) for _, s, *_ in metas),
-        "multi_source_channels": sum(1 for _, _, n, _ in metas if n > 1),
+        "multi_source_channels": sum(1 for _, _, n, *_ in metas if n > 1),
         "channels_by_provider": by_provider,
         "channels_by_genre": {g: sum(1 for m in previews if g in m["genres"]) for g in used_genres},
         "channels_by_theme": theme_counts,

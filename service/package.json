@@ -1,0 +1,9 @@
+{
+  "name": "usa-free-tv-service",
+  "private": true,
+  "description": "Configurable USA Free TV Stremio addon: favorites and filters per setup code.",
+  "engines": { "node": ">=18" },
+  "scripts": {
+    "dev": "node dev-server.js"
+  }
+}

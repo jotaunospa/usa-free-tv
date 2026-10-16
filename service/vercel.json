@@ -1,0 +1,15 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "rewrites": [
+    { "source": "/", "destination": "/configure.html" },
+    { "source": "/configure", "destination": "/configure.html" },
+    { "source": "/:code/configure", "destination": "/configure.html" },
+    { "source": "/(.*)", "destination": "/api/addon?p=$1" }
+  ],
+  "headers": [
+    {
+      "source": "/configure.html",
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=300" }]
+    }
+  ]
+}

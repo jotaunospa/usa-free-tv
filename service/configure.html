@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>USA Free TV · Arma tu lista</title>
+<meta name="description" content="Elige tus canales favoritos, el idioma y las filas de USA Free TV para Stremio.">
+<link rel="icon" href="https://raw.githubusercontent.com/jotaunospa/usa-free-tv/main/public/logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap">
+<style>
+/* Layout: a TV-guide setup screen. Four numbered steps (they really are a sequence),
+   a sticky save bar, and the install panel that replaces the bar once saved. */
+:root{
+  --bg:#f4f5f7; --panel:#ffffff; --line:#dcdfe5; --fg:#141821; --muted:#5d6574;
+  --accent:#d6261c; --accent-ink:#ffffff; --accent-soft:#fbe6e4; --star:#e0a100; --ok:#16794a; --ok-ink:#ffffff;
+  --display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --body:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#0e1015; --panel:#171a21; --line:#2a2f3a; --fg:#eceef2; --muted:#9ba2b0;
+  --accent:#ff5a4f; --accent-ink:#1a0402; --accent-soft:#3a1714; --star:#ffc531; --ok:#4fd08d; --ok-ink:#06220f;
+  color-scheme:dark}}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--fg);font:16px/1.5 var(--body);padding-bottom:calc(96px + env(safe-area-inset-bottom,0px))}
+.wrap{max-width:1040px;margin:0 auto;padding:28px max(16px,env(safe-area-inset-right,0px)) 24px max(16px,env(safe-area-inset-left,0px));display:grid;gap:18px}
+header{display:flex;gap:14px;align-items:center}
+header img{width:52px;height:52px;border-radius:10px}
+.brand{font:700 30px/1 var(--display);letter-spacing:.01em;margin:0}
+.brand small{display:block;font:500 15px/1.3 var(--body);color:var(--muted);letter-spacing:0;margin-top:4px}
+.onair{font:700 12px/1 var(--display);letter-spacing:.12em;text-transform:uppercase;color:var(--accent);border:1.5px solid var(--accent);border-radius:4px;padding:3px 6px;margin-left:auto;white-space:nowrap}
+section.step{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px;display:grid;gap:12px}
+.step h2{margin:0;font:700 22px/1.1 var(--display);display:flex;gap:10px;align-items:baseline}
+.step h2 .n{font:700 15px/1 var(--display);color:var(--accent);min-width:1.4em}
+.hint{margin:0;color:var(--muted);font-size:14px;max-width:65ch}
+.choices{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px}
+.choice{display:flex;gap:10px;align-items:flex-start;border:1.5px solid var(--line);border-radius:10px;padding:12px;cursor:pointer}
+.choice:has(input:checked){border-color:var(--accent);background:var(--accent-soft)}
+.choice input{margin-top:4px;accent-color:var(--accent)}
+.choice b{display:block;font-weight:600}
+.choice span{font-size:14px;color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{font:500 14px/1 var(--body);padding:8px 12px;border-radius:999px;border:1.5px solid var(--line);background:transparent;color:var(--fg);cursor:pointer}
+.chip[aria-pressed="true"]{border-color:var(--fg);background:var(--fg);color:var(--bg)}
+.favgrid{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:16px}
+@media (max-width:760px){.favgrid{grid-template-columns:minmax(0,1fr)}}
+.tools{display:flex;gap:8px;flex-wrap:wrap}
+.tools input,.tools select{font:inherit;font-size:15px;color:var(--fg);background:var(--bg);border:1.5px solid var(--line);border-radius:8px;padding:9px 11px;min-width:0}
+.tools input{flex:1 1 200px}
+.results{display:grid;gap:6px;max-height:560px;overflow:auto;padding-right:4px}
+.ch{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:10px;align-items:center;padding:6px 8px;border-radius:8px}
+.ch:hover{background:var(--bg)}
+.ch img{width:44px;height:44px;object-fit:contain;border-radius:6px;background:#0002}
+.ch .nm{font-weight:600;line-height:1.25;overflow-wrap:anywhere}
+.ch .meta{font-size:12.5px;color:var(--muted)}
+.star{font-size:22px;line-height:1;background:none;border:0;cursor:pointer;color:var(--muted);padding:6px}
+.star[aria-pressed="true"]{color:var(--star)}
+.more{justify-self:start;font:600 14px var(--body);background:none;border:1.5px solid var(--line);border-radius:8px;padding:8px 12px;color:var(--fg);cursor:pointer}
+.favs{background:var(--bg);border-radius:10px;padding:12px;display:grid;gap:8px;align-content:start}
+.favs h3{margin:0;font:700 18px/1 var(--display)}
+.favs ol{list-style:none;margin:0;padding:0;display:grid;gap:6px;max-height:520px;overflow:auto}
+.favs li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:6px 8px;font-size:14px}
+.favs li .nm{overflow-wrap:anywhere}
+.favs .acts{display:flex;gap:2px}
+.favs .acts button{background:none;border:0;cursor:pointer;color:var(--muted);font-size:15px;padding:4px 6px;border-radius:4px}
+.favs .acts button:hover{color:var(--fg);background:var(--bg)}
+.empty{color:var(--muted);font-size:14px}
+.bar{position:fixed;left:0;right:0;bottom:0;z-index:5;background:var(--panel);border-top:1px solid var(--line);padding:12px max(16px,env(safe-area-inset-right,0px)) calc(12px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.bar .in{max-width:1040px;margin:0 auto;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.save{font:700 18px/1 var(--display);letter-spacing:.03em;background:var(--accent);color:var(--accent-ink);border:0;border-radius:10px;padding:13px 22px;cursor:pointer}
+.save:disabled{opacity:.6;cursor:progress}
+.status{font-size:14px;color:var(--muted);flex:1 1 200px}
+.status.err{color:var(--accent)}
+.install{border:2px solid var(--ok);display:grid;gap:12px}
+.install .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.btn{display:inline-block;font:600 15px/1 var(--body);text-decoration:none;border-radius:8px;padding:11px 14px;border:1.5px solid var(--line);color:var(--fg);background:var(--panel);cursor:pointer}
+.btn.primary{background:var(--ok);border-color:var(--ok);color:var(--ok-ink)}
+code.url{display:block;font:13px/1.4 ui-monospace,Menlo,monospace;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px;overflow-wrap:anywhere;user-select:all}
+.note{font-size:14px;color:var(--muted);margin:0}
+.warn{font-size:14px;margin:0;padding:10px 12px;border-radius:8px;background:var(--accent-soft)}
+:focus-visible{outline:2.5px solid var(--accent);outline-offset:2px}
+a{color:var(--accent)}
+@media (max-width:420px){.onair{display:none}.brand{font-size:26px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <img src="https://raw.githubusercontent.com/jotaunospa/usa-free-tv/main/public/logo.png" alt="">
+    <h1 class="brand">USA Free TV<small>Arma tu lista de canales para Stremio</small></h1>
+    <span class="onair" id="updated">En vivo</span>
+  </header>
+
+  <section class="install step" id="install" hidden>
+    <h2>Tu lista está lista</h2>
+    <p class="warn" id="reinstall" hidden>Cambiaste el idioma, la región o las filas: para ver ese cambio en la tele, desinstala el addon en Stremio e instálalo de nuevo con el botón de abajo.</p>
+    <div class="row">
+      <a class="btn primary" id="lnkApp" href="#">Instalar en Stremio</a>
+      <a class="btn" id="lnkWeb" href="#" target="_blank" rel="noopener">Abrir en Stremio Web</a>
+      <button class="btn" id="copy" type="button">Copiar link</button>
+    </div>
+    <code class="url" id="manifestUrl"></code>
+    <p class="note">En la tele: Stremio → Addons → pega este link en el buscador → Instalar. Los favoritos que cambies después aparecen solos, sin reinstalar. Para editar esta lista otra vez, abre <a id="lnkEdit" href="#"></a> o usa el botón Configurar del addon en Stremio.</p>
+  </section>
+
+  <section class="step">
+    <h2><span class="n">1</span>¿Desde dónde ves?</h2>
+    <div class="choices" role="radiogroup" aria-label="Región">
+      <label class="choice"><input type="radio" name="region" value="intl" id="r-intl" checked><span><b>Fuera de EE.UU.</b><span>Chile, Latinoamérica, Europa… Los canales que funcionan sin VPN van primero.</span></span></label>
+      <label class="choice"><input type="radio" name="region" value="us" id="r-us"><span><b>En EE.UU. o con VPN de EE.UU.</b><span>Todo funciona, así que los canales se ordenan por popularidad.</span></span></label>
+    </div>
+  </section>
+
+  <section class="step">
+    <h2><span class="n">2</span>Idioma</h2>
+    <div class="choices" role="radiogroup" aria-label="Idioma">
+      <label class="choice"><input type="radio" name="lang" value="en" id="l-en" checked><span><b>Solo inglés</b><span>Sin canales en español ni doblajes.</span></span></label>
+      <label class="choice"><input type="radio" name="lang" value="all" id="l-all"><span><b>Inglés, español y otros</b><span>Suma <span id="otherCount">los</span> canales en otros idiomas, con su propia fila.</span></span></label>
+    </div>
+  </section>
+
+  <section class="step">
+    <h2><span class="n">3</span>Filas en el inicio</h2>
+    <p class="hint">Toca una fila para ocultarla. "⭐ My Favorites" siempre va primero.</p>
+    <div class="chips" id="themes"></div>
+  </section>
+
+  <section class="step">
+    <h2><span class="n">4</span>Favoritos</h2>
+    <p class="hint">Busca por canal o por serie (los nombres incluyen lo que transmiten: prueba "South Park" o "Pawn Stars") y marca la estrella.</p>
+    <div class="favgrid">
+      <div style="display:grid;gap:10px;min-width:0">
+        <div class="tools">
+          <input id="q" type="search" placeholder="Buscar canal o serie…" aria-label="Buscar canal o serie" autocomplete="off">
+          <select id="tf" aria-label="Filtrar por tema"><option value="">Todos los temas</option></select>
+        </div>
+        <div class="results" id="results" aria-live="polite"></div>
+        <button class="more" id="more" type="button" hidden>Mostrar más</button>
+      </div>
+      <div class="favs">
+        <h3>Tus favoritos <span id="favCount">(0)</span></h3>
+        <ol id="favList"></ol>
+        <p class="empty" id="favEmpty">Todavía no marcas ninguno.</p>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div class="bar"><div class="in">
+  <button class="save" id="save" type="button">Guardar e instalar</button>
+  <span class="status" id="status">Cargando canales…</span>
+</div></div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const fold = (s) => s.normalize("NFKD").replace(/[̀-ͯ]/g, "").toLowerCase();
+const PAGE = 80;
+const PROV = {pluto:"Pluto TV",samsung:"Samsung TV Plus",tubi:"Tubi",roku:"Roku",plex:"Plex",freetv:"Free-TV",iptvorg:"iptv-org"};
+const S = {index: null, byId: new Map(), code: null, saved: null,
+           prefs: {region: "intl", lang: "en", favs: [], hide: []}, shown: PAGE};
+
+const store = {get(k){try{return localStorage.getItem(k)}catch{return null}}, set(k,v){try{localStorage.setItem(k,v)}catch{}}};
+
+function codeFromPath() {
+  const m = location.pathname.match(/^\/([a-z0-9]{10})\/configure/);
+  return m ? m[1] : null;
+}
+
+function status(t, err) { $("status").textContent = t; $("status").classList.toggle("err", !!err); }
+
+function visibleChannels() {
+  return S.index.channels.filter((c) => S.prefs.lang === "all" || c.lang === "en");
+}
+
+function renderThemes() {
+  const themes = S.index.themes.filter(([id]) => !(id === "novpn" && S.prefs.region === "us"));
+  $("themes").innerHTML = themes.map(([id, name]) =>
+    `<button type="button" class="chip" data-t="${esc(id)}" aria-pressed="${!S.prefs.hide.includes(id)}">${esc(name)}</button>`).join("");
+}
+
+function renderResults() {
+  const q = fold($("q").value.trim()), tf = $("tf").value;
+  const list = visibleChannels().filter((c) => (!q || fold(c.name).includes(q)) && (!tf || c.themes.includes(tf)));
+  const favs = new Set(S.prefs.favs);
+  $("results").innerHTML = list.slice(0, S.shown).map((c) => `<div class="ch">
+      <img src="${esc(c.poster)}" alt="" loading="lazy" decoding="async">
+      <div><div class="nm">${esc(c.name)}</div><div class="meta">${esc(c.providers.map((p) => PROV[p] || p).join(", "))}${c.themes.includes("novpn") ? " · sin VPN" : ""}${c.lang !== "en" ? " · otro idioma" : ""}</div></div>
+      <button type="button" class="star" data-id="${esc(c.id)}" aria-pressed="${favs.has(c.id)}" aria-label="${favs.has(c.id) ? "Quitar de" : "Agregar a"} favoritos: ${esc(c.name)}">★</button>
+    </div>`).join("") || `<p class="empty">Ningún canal coincide con "${esc($("q").value)}".</p>`;
+  $("more").hidden = list.length <= S.shown;
+}
+
+function renderFavs() {
+  const items = S.prefs.favs.map((id) => S.byId.get(id)).filter(Boolean);
+  $("favList").innerHTML = items.map((c, i) => `<li>
+      <span class="nm">${esc(c.name)}</span>
+      <span class="acts">
+        <button type="button" data-mv="-1" data-id="${esc(c.id)}" aria-label="Subir ${esc(c.name)}" ${i === 0 ? "disabled" : ""}>↑</button>
+        <button type="button" data-mv="1" data-id="${esc(c.id)}" aria-label="Bajar ${esc(c.name)}" ${i === items.length - 1 ? "disabled" : ""}>↓</button>
+        <button type="button" data-rm="1" data-id="${esc(c.id)}" aria-label="Quitar ${esc(c.name)}">✕</button>
+      </span></li>`).join("");
+  $("favCount").textContent = `(${items.length})`;
+  $("favEmpty").hidden = items.length > 0;
+}
+
+function toggleFav(id) {
+  const f = S.prefs.favs, i = f.indexOf(id);
+  if (i === -1) f.push(id); else f.splice(i, 1);
+  renderFavs(); renderResults();
+}
+
+function applyPrefsToForm() {
+  $("r-" + S.prefs.region).checked = true;
+  $("l-" + S.prefs.lang).checked = true;
+  renderThemes(); renderResults(); renderFavs();
+}
+
+function manifestUrl(code) { return `${location.origin}/${code}/manifest.json`; }
+
+function showInstall(changedShape) {
+  const url = manifestUrl(S.code);
+  $("manifestUrl").textContent = url;
+  $("lnkApp").href = url.replace(/^https?:\/\//, "stremio://");
+  $("lnkWeb").href = "https://web.stremio.com/#/addons?addon=" + encodeURIComponent(url);
+  const edit = `${location.origin}/${S.code}/configure`;
+  $("lnkEdit").href = edit; $("lnkEdit").textContent = edit.replace(/^https?:\/\//, "");
+  $("reinstall").hidden = !changedShape;
+  $("install").hidden = false;
+  $("save").textContent = "Guardar cambios";
+}
+
+const shapeOf = (p) => JSON.stringify([p.region, p.lang, [...p.hide].sort()]);
+
+async function save() {
+  $("save").disabled = true; status("Guardando…");
+  try {
+    const r = await fetch("/api/prefs", {method: "POST", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({code: S.code, prefs: S.prefs})});
+    const body = await r.json();
+    if (!r.ok) throw new Error(body.err || "No se pudo guardar.");
+    const first = !S.code;
+    const changedShape = !first && S.saved && shapeOf(S.saved) !== shapeOf(body.prefs);
+    S.code = body.code; S.saved = body.prefs; store.set("uftv-code", S.code);
+    if (location.pathname !== `/${S.code}/configure`) history.replaceState(null, "", `/${S.code}/configure`);
+    showInstall(changedShape);
+    status(first ? `Listo. Tu código es ${S.code}.` : "Cambios guardados. Los favoritos se actualizan solos en la tele.");
+    if (first) $("install").scrollIntoView({behavior: "smooth", block: "start"});
+  } catch (e) {
+    status(e.message === "Failed to fetch" ? "Sin conexión con el servidor. Revisa tu internet e intenta de nuevo." : e.message, true);
+  } finally { $("save").disabled = false; }
+}
+
+document.addEventListener("change", (e) => {
+  if (e.target.name === "region") { S.prefs.region = e.target.value; renderThemes(); }
+  if (e.target.name === "lang") { S.prefs.lang = e.target.value; S.shown = PAGE; renderResults(); }
+});
+$("themes").addEventListener("click", (e) => {
+  const b = e.target.closest(".chip"); if (!b) return;
+  const t = b.dataset.t, h = S.prefs.hide, i = h.indexOf(t);
+  if (i === -1) h.push(t); else h.splice(i, 1);
+  b.setAttribute("aria-pressed", String(i !== -1));
+});
+$("results").addEventListener("click", (e) => { const b = e.target.closest(".star"); if (b) toggleFav(b.dataset.id); });
+$("favList").addEventListener("click", (e) => {
+  const b = e.target.closest("button"); if (!b) return;
+  const f = S.prefs.favs, i = f.indexOf(b.dataset.id);
+  if (b.dataset.rm) f.splice(i, 1);
+  else { const j = i + Number(b.dataset.mv); if (j >= 0 && j < f.length) [f[i], f[j]] = [f[j], f[i]]; }
+  renderFavs(); renderResults();
+});
+let qTimer;
+$("q").addEventListener("input", () => { clearTimeout(qTimer); qTimer = setTimeout(() => { S.shown = PAGE; renderResults(); }, 120); });
+$("tf").addEventListener("change", () => { S.shown = PAGE; renderResults(); });
+$("more").addEventListener("click", () => { S.shown += PAGE; renderResults(); });
+$("save").addEventListener("click", save);
+$("copy").addEventListener("click", async () => {
+  const url = $("manifestUrl").textContent;
+  try { await navigator.clipboard.writeText(url); status("Link copiado."); }
+  catch { getSelection().selectAllChildren($("manifestUrl")); status("Selecciona el link y cópialo."); }
+});
+
+(async () => {
+  try {
+    const r = await fetch("/data/index.json");
+    if (!r.ok) throw new Error();
+    const raw = await r.json();
+    const chans = raw.channels.map((row) => Object.fromEntries(raw.fields.map((k, i) => [k, row[i]])));
+    S.index = {themes: raw.themes, channels: chans};
+    S.byId = new Map(chans.map((c) => [c.id, c]));
+    $("tf").insertAdjacentHTML("beforeend", raw.themes.map(([id, n]) => `<option value="${esc(id)}">${esc(n)}</option>`).join(""));
+    $("otherCount").textContent = String(chans.filter((c) => c.lang !== "en").length);
+    $("updated").textContent = `${chans.filter((c) => c.lang === "en").length} canales`;
+  } catch { status("No se pudieron cargar los canales. Recarga la página en un minuto.", true); return; }
+
+  S.code = codeFromPath() || store.get("uftv-code");
+  if (S.code) {
+    try {
+      const r = await fetch(`/api/prefs?code=${encodeURIComponent(S.code)}`);
+      if (r.ok) {
+        const body = await r.json();
+        S.saved = body.prefs;
+        S.prefs = {region: body.prefs.region, lang: body.prefs.lang, favs: [...body.prefs.favs], hide: [...body.prefs.hide]};
+        showInstall(false);
+        status(`Editando tu lista (código ${S.code}).`);
+      } else { S.code = null; status("Elige tus opciones y guarda."); }
+    } catch { S.code = null; status("Elige tus opciones y guarda."); }
+  } else status("Elige tus opciones y guarda.");
+  applyPrefsToForm();
+})();
+</script>
+</body>
+</html>

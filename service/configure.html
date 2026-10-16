@@ -291,7 +291,7 @@ $("copy").addEventListener("click", async () => {
     const chans = raw.channels.map((row) => Object.fromEntries(raw.fields.map((k, i) => [k, row[i]])));
     S.index = {themes: raw.themes, channels: chans};
     S.byId = new Map(chans.map((c) => [c.id, c]));
-    $("tf").insertAdjacentHTML("beforeend", raw.themes.map(([id, n]) => `<option value="${esc(id)}">${esc(n)}</option>`).join(""));
+    $("tf").insertAdjacentHTML("beforeend", raw.themes.filter(([id]) => id !== "novpn").map(([id, n]) => `<option value="${esc(id)}">${esc(n)}</option>`).join(""));
     $("otherCount").textContent = String(chans.filter((c) => c.lang !== "en").length);
     $("updated").textContent = `${chans.filter((c) => c.lang === "en").length} canales`;
   } catch { status("No se pudieron cargar los canales. Recarga la página en un minuto.", true); return; }

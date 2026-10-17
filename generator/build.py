@@ -155,7 +155,7 @@ NAME_GENRE_HINTS = [
 THEMES = [
     # id, row name, genres, provider-category words, name regex
     ("novpn", "Watch Without VPN", [], [], None),         # has a stream that plays outside the US
-    ("popular", "Popular Free Channels", [], [], None),   # carried by 2+ services
+    ("popular", "Popular Free Channels", [], [], None),   # carried by 3+ services
     ("series", "Series 24/7", [], [], None),              # EPG shows one series all day
     ("news", "News 24/7", ["News"], [], None),
     ("sports", "Sports", ["Sports"], [], None),
@@ -390,7 +390,7 @@ def themes_for(groups: list[str], name: str, genres: list[str], providers: int,
         if tid == "novpn":
             hit = open_stream
         elif tid == "popular":
-            hit = providers >= 2
+            hit = providers >= 3
         elif tid == "series":
             hit = series is not None and not (set(genres) & NOT_SERIES)
         else:

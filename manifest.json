@@ -1,8 +1,8 @@
 {
   "id": "community.usa-free-tv",
-  "version": "1.0.9",
+  "version": "1.0.10",
   "name": "USA Free TV",
-  "description": "1545 free, legal US live channels from Pluto TV, Samsung TV Plus, Tubi, The Roku Channel, Plex and curated public streams. One entry per channel, with every available source as a backup stream.",
+  "description": "1550 free, legal US live channels from Pluto TV, Samsung TV Plus, Tubi, The Roku Channel, Plex and curated public streams. One entry per channel, with every available source as a backup stream.",
   "logo": "https://raw.githubusercontent.com/jotaunospa/usa-free-tv/main/public/logo.png",
   "resources": [
     "catalog",

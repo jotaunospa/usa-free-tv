@@ -1,22 +1,22 @@
 {
-  "channels": 1549,
-  "streams": 2332,
+  "channels": 1552,
+  "streams": 2339,
   "multi_source_channels": 467,
   "channels_by_provider": {
     "pluto": 387,
     "samsung": 541,
-    "tubi": 172,
-    "roku": 189,
-    "plex": 615,
+    "tubi": 170,
+    "roku": 188,
+    "plex": 618,
     "freetv": 15,
-    "iptvorg": 375
+    "iptvorg": 378
   },
   "channels_by_genre": {
     "News": 80,
-    "Local": 68,
-    "Sports": 124,
+    "Local": 66,
+    "Sports": 125,
     "Movies": 124,
-    "Entertainment": 382,
+    "Entertainment": 385,
     "Comedy": 72,
     "Drama": 94,
     "Reality": 151,
@@ -30,21 +30,21 @@
     "Shopping": 7
   },
   "channels_by_theme": {
-    "Watch Without VPN": 535,
+    "Watch Without VPN": 536,
     "Popular Free Channels": 189,
     "Series 24/7": 323,
     "News 24/7": 80,
-    "Sports": 124,
+    "Sports": 125,
     "Movies": 124,
     "True Crime": 81,
     "Comedy": 72,
     "Kids & Family": 79,
     "Anime & Gaming": 26,
     "Game Shows": 38,
-    "History, Science & Nature": 89,
+    "History, Science & Nature": 88,
     "Food & Home": 77,
     "Westerns & Classic TV": 64,
     "Music": 97,
-    "Local News": 68
+    "Local News": 66
   }
 }

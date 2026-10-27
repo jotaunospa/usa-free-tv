@@ -1,39 +1,39 @@
 {
-  "channels": 1644,
-  "streams": 2428,
-  "multi_source_channels": 469,
+  "channels": 1558,
+  "streams": 2340,
+  "multi_source_channels": 467,
   "channels_by_provider": {
     "pluto": 387,
     "samsung": 541,
-    "tubi": 269,
+    "tubi": 172,
     "roku": 185,
-    "plex": 614,
+    "plex": 619,
     "freetv": 15,
-    "iptvorg": 378
+    "iptvorg": 381
   },
   "channels_by_genre": {
-    "News": 85,
-    "Local": 164,
+    "News": 86,
+    "Local": 68,
     "Sports": 123,
     "Movies": 125,
-    "Entertainment": 381,
+    "Entertainment": 386,
     "Comedy": 71,
     "Drama": 94,
     "Reality": 151,
     "Classics": 64,
     "Sci-Fi": 71,
     "Kids": 77,
-    "Documentaries": 63,
+    "Documentaries": 64,
     "Lifestyle": 129,
     "Music": 96,
-    "Faith": 64,
+    "Faith": 65,
     "Shopping": 7
   },
   "channels_by_theme": {
-    "Watch Without VPN": 629,
-    "Popular Free Channels": 187,
-    "Series 24/7": 321,
-    "News 24/7": 85,
+    "Watch Without VPN": 534,
+    "Popular Free Channels": 186,
+    "Series 24/7": 319,
+    "News 24/7": 86,
     "Sports": 123,
     "Movies": 125,
     "True Crime": 81,
@@ -41,10 +41,10 @@
     "Kids & Family": 77,
     "Anime & Gaming": 26,
     "Game Shows": 38,
-    "History, Science & Nature": 88,
-    "Food & Home": 77,
+    "History, Science & Nature": 89,
+    "Food & Home": 76,
     "Westerns & Classic TV": 64,
     "Music": 96,
-    "Local News": 164
+    "Local News": 68
   }
 }

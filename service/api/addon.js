@@ -50,7 +50,8 @@ async function prefsFor(code, index) {
 async function proxy(res, path) {
   const r = await fetch(`${cat.DATA_BASE}/${path}`);
   if (!r.ok) return send(res, r.status === 404 ? 404 : 502, { err: "not found" });
-  send(res, 200, await r.text(), 3600);
+  // The index changes daily; keep copies short so a new day (or a new format) shows up fast.
+  send(res, 200, await r.text(), 300);
 }
 
 module.exports = async (req, res) => {

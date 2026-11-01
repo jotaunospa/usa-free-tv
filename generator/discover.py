@@ -28,6 +28,19 @@ def get_json(url, headers=None, timeout=45):
         return json.loads(r.read().decode("utf-8", "replace"))
 
 
+def lg_payload(url, headers):
+    """LG sends its list as base64(zlib(JSON)); fall back to plain JSON if that changes."""
+    import base64, zlib
+    h = {"User-Agent": UA, "Accept": "application/json, text/plain, */*"}
+    h.update(headers)
+    with urllib.request.urlopen(urllib.request.Request(url, headers=h), timeout=45) as r:
+        raw = r.read().decode("utf-8", "replace").strip()
+    try:
+        return json.loads(raw)
+    except ValueError:
+        return json.loads(zlib.decompress(base64.b64decode(raw)).decode("utf-8"))
+
+
 def vizio():
     j = get_json("https://watchfreeplus-epg-prod.smartcasttv.com/api/channels", {"User-Agent": "okhttp/4.12.0"})
     for c in j.get("channels") or []:
@@ -35,20 +48,22 @@ def vizio():
         if not name or str(c.get("channelId", "")).upper().startswith("FEATURED"):
             continue
         yield {"id": str(c.get("channelId")), "name": name, "category": c.get("category"),
-               "gated": bool(c.get("tokenUrl"))}
+               "gated": bool(c.get("tokenUrl")),
+               "url": (c.get("channelUrls") or [None])[0]}
 
 
 def lg():
     h = {"Origin": "https://lgchannels.com", "Referer": "https://lgchannels.com/", "x-device-country": "US",
          "x-device-language": "en", "x-device-type": "WEB"}
-    j = get_json("https://api.lgchannels.com/api/v1.0/schedulelist", h)
+    j = lg_payload("https://api.lgchannels.com/api/v1.0/schedulelist", h)
     seen = set()
     for cat in j.get("categories", []):
         for c in cat.get("channels", []):
             cid, name = str(c.get("channelId") or ""), (c.get("channelName") or "").strip()
             if cid and name and cid not in seen:
                 seen.add(cid)
-                yield {"id": cid, "name": name, "category": cat.get("categoryName") or c.get("channelGenreName")}
+                yield {"id": cid, "name": name, "category": cat.get("categoryName") or c.get("channelGenreName"),
+                       "url": c.get("mediaStaticUrl")}
 
 
 def xumo():
@@ -66,7 +81,8 @@ def xumo():
         if guid and name and live:
             g = it.get("genre")
             cat = (g[0].get("value") if isinstance(g, list) and g and isinstance(g[0], dict) else None)
-            yield {"id": str(guid), "name": name, "category": cat}
+            yield {"id": str(guid), "name": name, "category": cat,
+                   "url": f"https://play.xumo.com/live/{guid}"}
 
 
 def stirr():
@@ -79,7 +95,8 @@ def stirr():
                 vid = str(o["videoid"])
                 if vid not in seen:
                     seen.add(vid)
-                    yield {"id": vid, "name": str(o["title"]).strip(), "category": None}
+                    yield {"id": vid, "name": str(o["title"]).strip(), "category": None,
+                           "url": f"https://stirr.com/api/v2/videos/{vid}/playable"}
                 continue
             stack.extend(o.values())
         elif isinstance(o, list):

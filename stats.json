@@ -1,6 +1,6 @@
 {
-  "channels": 1556,
-  "streams": 2340,
+  "channels": 1555,
+  "streams": 2338,
   "multi_source_channels": 468,
   "channels_by_provider": {
     "pluto": 390,
@@ -9,14 +9,14 @@
     "roku": 186,
     "plex": 615,
     "freetv": 15,
-    "iptvorg": 381
+    "iptvorg": 380
   },
   "channels_by_genre": {
-    "News": 87,
+    "News": 85,
     "Local": 70,
     "Sports": 123,
     "Movies": 126,
-    "Entertainment": 383,
+    "Entertainment": 384,
     "Comedy": 72,
     "Drama": 94,
     "Reality": 151,
@@ -30,10 +30,10 @@
     "Shopping": 7
   },
   "channels_by_theme": {
-    "Watch Without VPN": 535,
+    "Watch Without VPN": 536,
     "Popular Free Channels": 188,
     "Series 24/7": 323,
-    "News 24/7": 87,
+    "News 24/7": 85,
     "Sports": 123,
     "Movies": 126,
     "True Crime": 81,

@@ -1,0 +1,11 @@
+{
+  "_doc": "Hand-made decisions from the review sheet. cat: force a category. star: channel José marked as must-have (+10 score).",
+  "cat": {
+    "usfree-abc7sarasota": "local", "usfree-atlantanewsfirst": "local", "usfree-cleveland19newsplus": "local",
+    "usfree-news12andhudsonvalley": "local", "usfree-news12andlongisland": "local", "usfree-news12andnewjersey": "local",
+    "usfree-news12andnewyork": "local", "usfree-news12bronx": "local", "usfree-news12brooklyn": "local",
+    "usfree-news12conneticut": "local", "usfree-news12hudsonvalley": "local", "usfree-news12westchester": "local",
+    "usfree-weathernationlosangeles": "local"
+  },
+  "star": ["usfree-cartoon", "usfree-comedycentralpluto", "usfree-forgedinfire", "usfree-pokemon", "usfree-zoomoo"]
+}

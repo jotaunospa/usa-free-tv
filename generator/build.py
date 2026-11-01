@@ -31,6 +31,8 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 
+import classify  # category + ranking rules (generator/classify.py)
+
 ROOT = Path(__file__).resolve().parent.parent
 UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36"
 PAGE_SIZE = 100
@@ -813,7 +815,17 @@ def build(base_url: str, check: bool) -> None:
 
     # In every row: channels that play without a VPN first, then the most widely
     # carried, then alphabetical.
-    metas.sort(key=lambda m: ("novpn" not in m[3], -m[2], m[0]["name"].lower()))
+    # Category and score per channel (rules in classify.py, hand decisions in overrides.json).
+    ov = json.loads((Path(__file__).parent / "overrides.json").read_text(encoding="utf-8"))
+    rank: dict[str, tuple[str, int]] = {}
+    for m, _s, _n, t, lang, provs in metas:
+        cat, sc = classify.categorize(m["name"], t, m["genres"], provs, lang)
+        cat = ov["cat"].get(m["id"], cat)
+        if m["id"] in ov["star"]:
+            sc += 10
+        rank[m["id"]] = (cat, sc)
+    # Default order everywhere: best score first, then alphabetical.
+    metas.sort(key=lambda m: (-rank[m[0]["id"]][1], m[0]["name"].lower()))
 
     out = ROOT
     for d in ("catalog", "meta", "stream"):
@@ -830,8 +842,9 @@ def build(base_url: str, check: bool) -> None:
     write_json(out / "data" / "index.json", {
         "updated": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "themes": [[tid, tname] for tid, tname, *_ in THEMES],
-        "fields": ["id", "name", "poster", "genres", "themes", "lang", "providers"],
-        "channels": [[m["id"], m["name"], m["poster"], m["genres"], t, lang, provs]
+        "cats": [[cid, cname] for cid, cname in classify.CATS],
+        "fields": ["id", "name", "poster", "genres", "themes", "lang", "providers", "cat", "score"],
+        "channels": [[m["id"], m["name"], m["poster"], m["genres"], t, lang, provs, *rank[m["id"]]]
                      for m, _, _, t, lang, provs in metas],
     })
 

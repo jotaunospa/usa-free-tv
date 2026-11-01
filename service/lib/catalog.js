@@ -29,7 +29,7 @@ async function loadIndex() {
   const raw = await r.json();
   const f = raw.fields;
   const channels = raw.channels.map((row) => Object.fromEntries(f.map((k, i) => [k, row[i]])));
-  const data = { updated: raw.updated, themes: raw.themes, cats: raw.cats || [], channels, byId: new Map(channels.map((c) => [c.id, c])) };
+  const data = { updated: raw.updated, themes: raw.themes, cats: raw.cats || [], aliases: raw.aliases || {}, channels, byId: new Map(channels.map((c) => [c.id, c])) };
   cached = { at: Date.now(), data };
   return data;
 }
@@ -37,14 +37,16 @@ async function loadIndex() {
 function cleanPrefs(p, index) {
   const valid = new Set(index ? index.channels.map((c) => c.id) : []);
   const rowIds = new Set(index ? [...index.themes.map((t) => t[0]), ...index.cats.map((c) => c[0])] : []);
-  const favs = Array.isArray(p?.favs) ? [...new Set(p.favs.filter((x) => typeof x === "string"))] : [];
+  // Channels folded into another (duplicates) keep answering to their old id.
+  const al = (id) => (index && index.aliases && index.aliases[id]) || id;
+  const favs = Array.isArray(p?.favs) ? [...new Set(p.favs.filter((x) => typeof x === "string").map(al))] : [];
   return {
     lang: p?.lang === "all" ? "all" : "en",
     region: p?.region === "us" ? "us" : "intl",
     favs: (index ? favs.filter((id) => valid.has(id)) : favs).slice(0, 500),
     // Automatic "Para ti" picks this person removed. Only their own changes are stored,
     // so the daily improvements to the automatic list keep reaching them.
-    drop: Array.isArray(p?.drop) ? [...new Set(p.drop.filter((x) => typeof x === "string" && (!index || valid.has(x))))].slice(0, 500) : [],
+    drop: Array.isArray(p?.drop) ? [...new Set(p.drop.filter((x) => typeof x === "string").map(al).filter((x) => !index || valid.has(x)))].slice(0, 500) : [],
     hide: Array.isArray(p?.hide) ? p.hide.filter((t) => !index || rowIds.has(t)).slice(0, 50) : [],
   };
 }

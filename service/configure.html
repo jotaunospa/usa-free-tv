@@ -320,7 +320,7 @@ $("copy").addEventListener("click", async () => {
     if (!r.ok) throw new Error();
     const raw = await r.json();
     const chans = raw.channels.map((row) => Object.fromEntries(raw.fields.map((k, i) => [k, row[i]])));
-    S.index = {themes: raw.themes, cats: raw.cats || [], channels: chans};
+    S.index = {themes: raw.themes, cats: raw.cats || [], aliases: raw.aliases || {}, channels: chans};
     S.byId = new Map(chans.map((c) => [c.id, c]));
     $("tf").insertAdjacentHTML("beforeend", rowList().map(([id, n]) => `<option value="${esc(id)}">${esc(n)}</option>`).join(""));
     $("otherCount").textContent = String(chans.filter((c) => c.lang !== "en").length);
@@ -334,7 +334,7 @@ $("copy").addEventListener("click", async () => {
       if (r.ok) {
         const body = await r.json();
         S.saved = body.prefs;
-        S.prefs = {region: body.prefs.region, lang: body.prefs.lang, favs: [...body.prefs.favs], drop: [...(body.prefs.drop || [])], hide: [...body.prefs.hide]};
+        S.prefs = {region: body.prefs.region, lang: body.prefs.lang, favs: [...new Set(body.prefs.favs.map((id) => S.index.aliases[id] || id))], drop: [...new Set((body.prefs.drop || []).map((id) => S.index.aliases[id] || id))], hide: [...body.prefs.hide]};
         showInstall(false);
         status(`Editando tu lista (código ${S.code}).`);
       } else { S.code = null; status("Elige tus opciones y guarda."); }

@@ -11,7 +11,7 @@ ix = IX
 
 def rx(*w): return re.compile(r"\b(" + "|".join(w) + r")\b", re.I)
 CATS=[("noticias","Noticias"),("local","Noticias locales"),("deportes","Deportes"),("motor","Motor y Carreras"),("ciencia","Ciencia y Tecnología"),("aventura","Aventura y Oficios"),
-("docs","Documentales y Naturaleza"),("crimen","Crimen y Misterio"),("reality","Realities y Concursos"),
+("docs","Documentales y Naturaleza"),("crimen","Crimen y Policial"),("misterio","Misterio y Paranormal"),("reality","Realities y Concursos"),
 ("series","Series 24/7"),("comedia","Comedia"),("peliculas","Películas"),("infantil","Infantil y Anime"),
 ("clasicos","Clásicos y Western"),("vida","Estilo de vida y Comida"),("musica","Música"),("otros","Otros (fe, compras, varios)")]
 SCI=rx(r"ax men",r"top gear",r"discovery turbo",r"motor\w*",r"moto\w*",r"nascar",r"nhra",r"racer",r"racing",r"speedvision",r"speed sport",r"carwow",r"cars",r"car chase",r"garage",r"counting cars",r"american restoration",r"torque",r"how it'?s made",r"how to",r"modern marvels",r"modern innovations",r"mythbusters",r"nasa",r"space",r"universe",r"science",r"popular science",r"curiosity",r"ancient engineering",r"pawn stars",r"american pickers",r"deal zone",r"forged in fire",r"ice road truckers",r"tough jobs",r"swamp people",r"mountain men",r"xtreme outdoor",r"deadliest catch",r"life below zero",r"alone",r"wicked tuna",r"oak island",r"ancient aliens",r"unxplained",r"mysteries xplored",r"storage wars",r"mysteries at the museum",r"mysterious worlds",r"in the garage",r"floracing",r"wheeler",r"overhaul\w*",r"dirty jobs",r"gold rush",r"genesis science",r"tech",r"engineer\w*")
@@ -26,12 +26,27 @@ MOVIE=rx(r"movies?",r"cinema",r"cine\w*",r"films?",r"filmrise",r"flicks",r"theat
 COMEDY=rx(r"mr\.? bean",r"comedy",r"sitcoms?",r"funny",r"laughs?",r"lol",r"snl",r"south park",r"adult swim",r"stand-?up",r"mystery science theater",r"conan",r"carson",r"carol burnett",r"tyler perry comedy",r"always funny",r"mythical")
 CLASSIC=rx(r"classic\w*",r"western\w*",r"grit",r"metv",r"rifleman",r"gunsmoke",r"bonanza",r"lassie",r"andy griffith",r"i love lucy",r"twilight zone",r"retro",r"oldies",r"vintage",r"golden age",r"hollywood history",r"tvs ")
 NEWS=rx(r"news\w*",r"weather",r"cbs news",r"nbc news",r"abc news",r"fox",r"bloomberg",r"cnbc",r"reuters",r"scripps",r"newsmax",r"cheddar",r"livenow",r"c-span",r"politic\w*",r"business")
+# Aliens, ghosts and the unexplained: kept apart from real crime so "Crimen" is not a mix
+# of homicide files and UFO hunters.
+PARANORMAL=re.compile(r"ancient aliens|alien nation|\baliens?\b|\bufos?\b|unxplained|unexplained|mysteries xplored|mysterious worlds|"
+    r"oak island|ghosts?|haunt\w*|paranormal|unidentified|beyond belief|monsters are real|mysteria\b|bigfoot|cryptid|supernatural (files|investig)|"
+    r"dread tv|scare tactics|ancient mysteries|history'?s greatest mysteries|unsolved mysteries of|in search of|"
+    r"universe mysteries|curse of oak",re.I)
+# Channels named after a music style (Stingray, Vevo, XITE...): "Smooth Jazz", "Pop Adult", "Hip-Hop/R&B".
+MUSICGENRE=re.compile(r"^(stingray |vevo |xite |qello |trace |music choice )?.{0,12}\b(jazz|blues|hip[- ]?hop|r ?& ?b|k-?pop|pop adult|adult pop|"
+    r"classic rock|soft rock|alt\w* rock|rock|metal|punk|country|bluegrass|gospel music|easy listening|classica|classical|opera|soul|funk|disco|"
+    r"reggae|latin hits|edm|dance|lounge|karaoke|hits|throwback hits|\d0s)\b",re.I)
+
 def classify(c):
     n=c[ix["name"]]; t=set(c[ix["themes"]]); g=set(c[ix["genres"]])
     if re.search(r"rupaul|walking dead|little stars|speed racer",n,re.I):
         return "infantil" if re.search(r"speed racer|little stars",n,re.I) else ("series" if "walking" in n.lower() else "reality")
     RELIG=r"catholic|christian|bible|church|gospel|jesus|\bfaith\b|ministr|\bcbn\b|\btbn\b|ewtn|cornerstone|\babn\b|answers tv|amazing facts|dr\. gene scott|cfn|better life|god\b|praise|worship|revival|daystar|sid roth|joyce meyer|rhema|3abn|salt\b|kingdom"
+    # Broadcast affiliates named "ABC 13 WLOS Asheville, NC" / "Fox 25 KOKH ...": local news.
+    if re.search(r"^(?i:abc|cbs|nbc|fox|mnt|cw|my|pbs|telemundo|univision)\s*\d*\s+[WK][A-Z]{2,4}(-[A-Z]{1,2})?\b",n): return "local"
+    if re.search(r"^judge ",n,re.I): return "reality"
     if "Faith" in g or re.search(RELIG,n,re.I): return "otros"
+    if MUSICGENRE.search(n) and len(n) < 40 and not re.search(r"movie|cinema|film|drama|comedy|kids|sports|news|cooking|rocky|rock(ford|y )",n,re.I): return "musica"
     if re.search(r"news ?12|abc ?\d+|nbc ?\d+|cbs ?\d+|fox ?\d+|\b\d{1,2}\b.*news|news first|news\+|weathernation .+|first alert",n,re.I) and ("news" in t or "News" in g): return "local"
     if re.search(r"american ninja warrior",n,re.I): return "reality"
     if re.search(r"judge|divorce court|paternity court|cutlers? court|court cam|legendary trials",n,re.I) and not re.search(r"court tv|law ?& ?crime",n,re.I): return "reality"
@@ -42,7 +57,8 @@ def classify(c):
     if re.search(r"top gear|discovery turbo|tvs turbo|torque|counting cars|carwow|^cars$|pluto tv cars|speedvision|hagerty|powernation|donut|in the garage|nascar|nhra|motogp|motoamerica|racer\b|racing america|speed sport|floracing|rally|rev'n|monster jam|formula 1|\bf1\b|indycar|fia |motorsport|drag rac|supercross|motocross",n,re.I): return "motor"
     if re.search(r"hong kong fight club",n,re.I): return "peliculas"
     if re.search(r"earthday|earth day",n,re.I): return "docs"
-    if re.search(r"ancient aliens|unxplained|mysteries xplored|mysterious worlds|oak island|car chase",n,re.I): return "crimen"
+    if re.search(r"car chase",n,re.I): return "crimen"
+    if PARANORMAL.search(n): return "misterio"
     if re.search(r"how it'?s made|modern marvels|modern innovations|mythbusters|nasa|space live|space & beyond|universe|popular science|curiosity now|pluto tv science|genesis science",n,re.I): return "ciencia"
     if re.search(r"alone$|mountain men|swamp people|life below zero|ice road|ax men|tough jobs|xtreme outdoor|spike outdoors|deadliest catch|survive or die|wicked tuna|field & stream|game & fish|waypoint|meateater|pursuit up|outside tv|bassmaster",n,re.I): return "aventura"
     if re.search(r"forged in fire|storage wars|pawn stars|american pickers|deal zone|military heroes|spike:|duck dynasty",n,re.I): return "reality"
@@ -57,7 +73,7 @@ def classify(c):
     if re.match(r"[WK][A-Z]{3}\b",n) or re.match(r"(first alert|arizona's family|wn charlotte)",n,re.I): return "local"
     if re.match(r"(nbc|cbs|abc|fox) w?k[a-z]{2,3}\b",n,re.I): return "local"
     if re.search(r"hoarders|intervention|bar rescue|project runway|top model|matched married|bad girls|black ink|braxton|bring it|come dine|caught in providence|caso cerrado|american gladiators|alaska state troopers|untold stories of the er|bondi rescue",n,re.I): return "reality"
-    if re.search(r"ghost|haunt|paranormal|unidentified|alien autopsy|beyond belief",n,re.I): return "crimen"
+    if re.search(r"ghost|haunt|paranormal|unidentified|alien autopsy|beyond belief",n,re.I): return "misterio"
     if SCI.search(n) and not NOT_SCI.search(n): return "ciencia"
     if ("news" in t or "News" in g) and not CRIME.search(n): return "noticias"
     if "sports" in t or "Sports" in g: return "deportes"
@@ -91,10 +107,42 @@ def score(c):
     return s,brand
 
 
+ES_RULES = [
+    (r"noticia|news|informativ|telediario|\bcnn\b|\bnoticias\b|estrella news|\bnmás\b|\bn\+", "noticias"),
+    (r"deport|f[uú]tbol|futbol|soccer|sports|liga|boxeo|lucha|beisbol|béisbol|\bespn\b|tudn|golazo|fight", "deportes"),
+    (r"novela|telenovela|drama|series|serie\b|ncis|mentes criminales|walking dead", "series"),
+    (r"cine|pel[ií]cula|movies?|films?|cinema|western", "peliculas"),
+    (r"infantil|niñ|ninos|kids|caricatura|anime|junior|\bjr\b|toons?|pocoyo|baby", "infantil"),
+    (r"m[uú]sica|music|hits|radio|reggaeton|banda|grupera|salsa|bachata|regional mexicano|tropical", "musica"),
+    (r"comedia|risa|humor|comedy|chistes|standup|stand-up", "comedia"),
+    (r"crimen|crimin|polic|delito|forense|justicia|misterios sin|true crime|caso cerrado", "crimen"),
+    (r"cocina|comida|recetas|food|chef|hogar|casa|viajes|travel|estilo", "vida"),
+    (r"naturaleza|animal|historia|document|ciencia|nat ?geo|history|discovery", "docs"),
+    (r"realit|concurso|juego", "reality"),
+    (r"cl[aá]sic|retro|nostalgia", "clasicos"),
+]
+
+def classify_es(row):
+    """Spanish or other-language channel: same rules on the name without "en español",
+    then Spanish keywords. Faith and shopping stay in "otros"."""
+    n = row[0]
+    base = re.sub(r"\s*\b(en espa[ñn]ol|espa[ñn]ol|latino|latinoam[eé]rica)\b", " ", n, flags=re.I).strip(" :-")
+    RELIG = r"catholic|cristian|christian|bible|biblia|church|iglesia|gospel|jes[uú]s|\bfe\b|faith|ministr|evangel|dios\b|god\b|ewtn|enlace|esne"
+    if re.search(RELIG, n, re.I):
+        return "otros"
+    guess = classify([base] + list(row[1:]))
+    if guess != "otros":
+        return guess
+    for pat, cat in ES_RULES:
+        if re.search(pat, n, re.I):
+            return cat
+    return "otros"
+
+
 def categorize(name, themes, genres, providers, lang="en"):
     """Return (category_id, score) for one channel."""
     row = [name, list(themes), list(genres), list(providers), lang]
-    cat = classify(row) if lang == "en" else "otros"
+    cat = classify(row) if lang == "en" else classify_es(row)
     s, brand = score(row)
     if BLACKTV.search(name):
         s -= 25          # Black-audience channels are kept, but sink to the bottom of their row

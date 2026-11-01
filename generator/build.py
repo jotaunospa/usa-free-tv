@@ -711,6 +711,58 @@ def merge(entries: list[Entry]) -> list[Channel]:
     return list(channels.values())
 
 
+# --------------------------------------------------------------------------- #
+# Families: the same channel published under slightly different names
+# --------------------------------------------------------------------------- #
+
+CURATION = json.loads((Path(__file__).parent / "curation.json").read_text(encoding="utf-8"))
+# Words each service bolts onto the same channel. Removing them gives the "family":
+# "Modern Marvels Presented by History" == "Modern Marvels by History" == "Modern Marvels".
+FAMILY_DECOR = ["presented by history", "by history", "from history", "by a and e", "by aande", "by a e",
+                "by mgm", "by lionsgate", "by amc", "on tubi", "24 7"]
+FAMILY_DROP = {"the", "and", "tv", "channel", "network", "plus", "hd", "official"}
+
+
+def family_key(name: str) -> str:
+    s = " " + norm(name) + " "
+    s = s.replace(" en espanol ", " espanol ")
+    for d in FAMILY_DECOR:
+        s = s.replace(" " + d + " ", " ")
+    w = s.split()
+    if len(w) > 2 and w[0] in {"pluto", "plex", "samsung"} and w[1] == "tv":
+        w = w[2:]
+    while len(w) > 2 and w[-1] in {"west", "east", "pacific"}:
+        w.pop()
+    w = [x for x in w if x not in FAMILY_DROP] or w
+    k = "".join(w)
+    return CURATION["alias"].get(k, k)
+
+
+def merge_families(channels: list[Channel]) -> tuple[list[Channel], dict[str, str], dict[str, str]]:
+    """Fold channels of the same family into one, keeping every stream. The channel
+    carried by the most services keeps its id. Returns (channels, alias old->kept key,
+    family of each kept key)."""
+    groups: dict[str, list[Channel]] = {}
+    for ch in channels:
+        fk = family_key(ch.primary.name)
+        if fk in CURATION["no_merge"] or len(fk) < 3:
+            fk = f"{fk}#{ch.key}"
+        groups.setdefault(fk, []).append(ch)
+    out, alias, fam = [], {}, {}
+    for fk, grp in groups.items():
+        main = max(grp, key=lambda c: (len({e.provider for e in c.entries}), -len(c.key)))
+        for other in grp:
+            if other is main:
+                continue
+            alias[other.key] = main.key
+            for e in other.entries:
+                if all(x.url != e.url for x in main.entries):
+                    main.entries.append(e)
+        fam[main.key] = fk.split("#")[0]
+        out.append(main)
+    return out, alias, fam
+
+
 def resolve_ids(channels: list[Channel]) -> dict[str, Channel]:
     out: dict[str, Channel] = {}
     for ch in channels:
@@ -746,14 +798,18 @@ def build(base_url: str, check: bool) -> None:
 
     # English and non-English channels are merged separately, so a Spanish dub never
     # becomes a backup stream of the English channel with the same name.
-    english = merge(entries)
+    english, alias_en, fam_en = merge_families(merge(entries))
     taken = {ch.key for ch in english}
-    other = merge(foreign)
+    other, alias_ot, fam_ot = merge_families(merge(foreign))
     for ch in other:
         if ch.key in taken:
             ch.key += "es"
     lang_of = {id(ch): "en" for ch in english} | {id(ch): "other" for ch in other}
     channels = resolve_ids(english + other)
+    family_of = {cid: (fam_en | fam_ot).get(ch.key, "") for cid, ch in channels.items()}
+    # Old ids that now live inside another channel, so saved favourites keep working.
+    aliases = {slug(old): slug(new) for old, new in (alias_en | alias_ot).items()}
+    print(f"  Families: {len(aliases)} duplicate channels folded into others")
     if len(english) < 200:
         sys.exit(f"Only {len(english)} channels built; refusing to overwrite the addon.")
 
@@ -817,11 +873,15 @@ def build(base_url: str, check: bool) -> None:
     # carried, then alphabetical.
     # Category and score per channel (rules in classify.py, hand decisions in overrides.json).
     ov = json.loads((Path(__file__).parent / "overrides.json").read_text(encoding="utf-8"))
+    # Marks made on ids that were folded into another channel count for that channel.
+    ov_cat = {aliases.get(k, k): v for k, v in ov["cat"].items()}
+    ov_star = {aliases.get(k, k) for k in ov["star"]}
     rank: dict[str, tuple[str, int]] = {}
     for m, _s, _n, t, lang, provs in metas:
         cat, sc = classify.categorize(m["name"], t, m["genres"], provs, lang)
-        cat = ov["cat"].get(m["id"], cat)
-        if m["id"] in ov["star"]:
+        cat = CURATION["cat"].get(family_of.get(m["id"], ""), cat)
+        cat = ov_cat.get(m["id"], cat)
+        if m["id"] in ov_star:
             sc += 10
         rank[m["id"]] = (cat, sc)
     # Default order everywhere: best score first, then alphabetical.
@@ -843,6 +903,7 @@ def build(base_url: str, check: bool) -> None:
         "updated": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "themes": [[tid, tname] for tid, tname, *_ in THEMES],
         "cats": [[cid, cname] for cid, cname in classify.CATS],
+        "aliases": aliases,
         "fields": ["id", "name", "poster", "genres", "themes", "lang", "providers", "cat", "score"],
         "channels": [[m["id"], m["name"], m["poster"], m["genres"], t, lang, provs, *rank[m["id"]]]
                      for m, _, _, t, lang, provs in metas],

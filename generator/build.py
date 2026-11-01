@@ -102,6 +102,16 @@ PAY_TV = [
 BROADCAST = {"abc", "cbs", "nbc", "fox", "cw", "the cw", "pbs", "ion", "telemundo",
              "univision", "unimas", "galavision", "tudn", "my network", "mynetworktv"}
 
+# Pay-TV brands that publish their own free, official streams (CNN and Fox FAST/preview
+# feeds, Xumo, beIN XTRA). The name filter would drop them, so they are let through by
+# exact stream host. Everything else under a pay-TV name stays excluded.
+PAY_ALLOW = (
+    "bein-xtra-bein.amagi.tv", "amg01918-cnnus-amg01918c2-vizio-us-9192.playouts.now.amagi.tv",
+    "d3bp6dwmpbdajl.cloudfront.net", "d2sybdl23b9psq.cloudfront.net",
+    "247preview.foxbusiness.com", "247preview.foxnews.com", "radiovid.foxnews.com",
+    "dbrb49pjoymg4.cloudfront.net", "d4whmvwm0rdvi.cloudfront.net",
+)
+
 # Hosts in community playlists that resell or retransmit channels they do not
 # own (subscription apps, regional OTT resellers, camera-monitoring relays).
 BLOCKED_HOSTS = ("univisionnow.com", "aynaott.com", "smartplaytv.in", "cammonitorplus.net",
@@ -652,7 +662,7 @@ def src_community(check: bool) -> list[Entry]:
     for e in raw:
         if "__nsfw__" in e.groups:
             dropped["nsfw"] += 1
-        elif is_pay_tv(e.name):
+        elif is_pay_tv(e.name) and not any(h in e.url for h in PAY_ALLOW):
             dropped["pay_tv"] += 1
         elif not url_is_clean(e.url):
             dropped["url"] += 1
